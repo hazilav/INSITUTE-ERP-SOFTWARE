@@ -4,7 +4,16 @@ import { hashPassword, createSession } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid request payload. Please ensure all form fields are filled correctly." },
+        { status: 400 }
+      );
+    }
+
     const {
       instituteName,
       logo,
@@ -18,15 +27,29 @@ export async function POST(request: Request) {
       role: requestedRole,
     } = body;
 
-    // Strict validation
-    if (!instituteName || !name || !email || !password) {
+    // Validation checks
+    if (!instituteName || typeof instituteName !== "string" || !instituteName.trim()) {
       return NextResponse.json(
-        { error: "Institute Name, User Name, Email, and Password are required." },
+        { error: "Please provide a valid Institute Name." },
         { status: 400 }
       );
     }
 
-    if (password.length < 6) {
+    if (!name || typeof name !== "string" || !name.trim()) {
+      return NextResponse.json(
+        { error: "Please provide your Full Name." },
+        { status: 400 }
+      );
+    }
+
+    if (!email || typeof email !== "string" || !email.trim()) {
+      return NextResponse.json(
+        { error: "Please provide a valid Email Address." },
+        { status: 400 }
+      );
+    }
+
+    if (!password || typeof password !== "string" || password.length < 6) {
       return NextResponse.json(
         { error: "Password must be at least 6 characters long." },
         { status: 400 }
@@ -34,29 +57,26 @@ export async function POST(request: Request) {
     }
 
     const cleanEmail = email.trim().toLowerCase();
+    const cleanInstituteEmail = instituteEmail && typeof instituteEmail === "string" && instituteEmail.trim()
+      ? instituteEmail.trim().toLowerCase()
+      : cleanEmail;
 
-    // Check if email already registered for another institute account
+    // Check if user email already exists
     const existingUser = await db.user.findFirst({
       where: { email: cleanEmail },
     });
 
     if (existingUser) {
       return NextResponse.json(
-        { error: "An account with this email address already exists." },
+        { error: `An account with the email '${cleanEmail}' already exists. Please sign in instead.` },
         { status: 400 }
       );
     }
 
-    // Role Guard: Users CANNOT select OWNER during regular signup.
-    // OWNER is assigned ONLY to the institute creator automatically.
+    // Role Assignment: Institute creator is automatically assigned OWNER role
     let assignedRole: "OWNER" | "ADMIN" | "STAFF" | "MENTOR" | "STUDENT" = "OWNER";
-    
-    // If the request was attempting to select a role or override, explicitly prevent unauthorized OWNER selection
     if (requestedRole && requestedRole !== "OWNER") {
       assignedRole = requestedRole;
-    } else {
-      // Automatic OWNER assignment for institute creation
-      assignedRole = "OWNER";
     }
 
     const hashedPassword = await hashPassword(password);
@@ -66,10 +86,10 @@ export async function POST(request: Request) {
       const institute = await tx.institute.create({
         data: {
           name: instituteName.trim(),
-          logo: logo?.trim() || null,
-          phone: institutePhone?.trim() || null,
-          email: instituteEmail?.trim() || cleanEmail,
-          address: address?.trim() || null,
+          logo: logo && typeof logo === "string" && logo.trim() ? logo.trim() : null,
+          phone: institutePhone && typeof institutePhone === "string" && institutePhone.trim() ? institutePhone.trim() : null,
+          email: cleanInstituteEmail,
+          address: address && typeof address === "string" && address.trim() ? address.trim() : null,
         },
       });
 
@@ -78,7 +98,7 @@ export async function POST(request: Request) {
           institute_id: institute.id,
           name: name.trim(),
           email: cleanEmail,
-          phone: phone?.trim() || null,
+          phone: phone && typeof phone === "string" && phone.trim() ? phone.trim() : null,
           password_hash: hashedPassword,
           role: assignedRole,
           status: "ACTIVE",
@@ -89,7 +109,11 @@ export async function POST(request: Request) {
     });
 
     // Create session and set cookie
-    await createSession(result.user.id);
+    try {
+      await createSession(result.user.id);
+    } catch (sessionErr: any) {
+      console.warn("Session cookie creation warning during registration:", sessionErr?.message || sessionErr);
+    }
 
     return NextResponse.json({
       success: true,
@@ -102,10 +126,11 @@ export async function POST(request: Request) {
         institute: result.institute,
       },
     });
-  } catch (error) {
-    console.error("Registration error:", error);
+  } catch (error: any) {
+    console.error("Registration error exception:", error);
+    const errorMessage = error?.message || "An error occurred during institute registration";
     return NextResponse.json(
-      { error: "An error occurred during institute registration" },
+      { error: errorMessage },
       { status: 500 }
     );
   }
