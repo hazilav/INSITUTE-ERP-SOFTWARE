@@ -5,6 +5,32 @@ import path from "path";
 
 export const dynamic = "force-dynamic";
 
+function getMimeFromExt(ext: string): string {
+  switch (ext) {
+    case ".svg":
+      return "image/svg+xml";
+    case ".png":
+      return "image/png";
+    case ".jpg":
+    case ".jpeg":
+      return "image/jpeg";
+    case ".webp":
+      return "image/webp";
+    case ".gif":
+      return "image/gif";
+    case ".bmp":
+      return "image/bmp";
+    case ".avif":
+      return "image/avif";
+    case ".ico":
+      return "image/x-icon";
+    case ".pdf":
+      return "application/pdf";
+    default:
+      return "application/octet-stream";
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const authContext = await getAuthenticatedUser();
@@ -76,16 +102,24 @@ export async function POST(request: Request) {
       buffer = Buffer.from(content, "utf8");
     }
 
-    // Save file
+    // Save file to disk or fallback to Data URL for serverless environments (Vercel / AWS Lambda)
     const safeSubFolder = folderType === "logos" ? "logos" : "activities";
-    const uploadDir = path.join(process.cwd(), "public", "uploads", safeSubFolder);
-    await mkdir(uploadDir, { recursive: true });
+    let publicUrl = "";
 
-    const uniqueFilename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}${ext}`;
-    const filePath = path.join(uploadDir, uniqueFilename);
-    await writeFile(filePath, buffer);
+    try {
+      const uploadDir = path.join(process.cwd(), "public", "uploads", safeSubFolder);
+      await mkdir(uploadDir, { recursive: true });
 
-    const publicUrl = `/uploads/${safeSubFolder}/${uniqueFilename}`;
+      const uniqueFilename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}${ext}`;
+      const filePath = path.join(uploadDir, uniqueFilename);
+      await writeFile(filePath, buffer);
+
+      publicUrl = `/uploads/${safeSubFolder}/${uniqueFilename}`;
+    } catch (fsErr: any) {
+      console.warn("Disk write unavailable (Vercel serverless / read-only filesystem), using Data URL fallback:", fsErr);
+      const mimeType = file.type || getMimeFromExt(ext);
+      publicUrl = `data:${mimeType};base64,${buffer.toString("base64")}`;
+    }
 
     return NextResponse.json({
       success: true,
