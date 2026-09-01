@@ -273,13 +273,11 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-brand-950 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <p className="text-slate-400 text-xs uppercase tracking-wider font-semibold">Good Morning 👋</p>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1">
-            {institute.name}
-          </h1>
-        </div>
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-brand-950 rounded-3xl p-6 sm:p-10 text-white shadow-xl relative overflow-hidden flex flex-col items-center justify-center text-center gap-2">
+        <p className="text-slate-400 text-xs uppercase tracking-widest font-bold">Welcome to 👋</p>
+        <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
+          {institute.name}
+        </h1>
       </div>
 
       <PortalQuickShareCard customDomain={institute.website} />
