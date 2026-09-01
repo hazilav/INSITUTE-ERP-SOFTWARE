@@ -115,8 +115,8 @@ export default function TemplatesClient() {
   const renderPreviewOutput = (template: TemplateItem) => {
     let output = template.body_template;
     output = output.replace(/\{\{\s*student_name\s*\}\}/g, "Alex Johnson");
-    output = output.replace(/\{\{\s*balance\s*\}\}/g, "$1,250.00");
-    output = output.replace(/\{\{\s*due_date\s*\}\}/g, new Date().toLocaleDateString());
+    output = output.replace(/\{\{\s*balance\s*\}\}/g, "₹2,500");
+    output = output.replace(/\{\{\s*due_date\s*\}\}/g, new Date().toLocaleDateString("en-IN"));
     output = output.replace(/\{\{\s*activity_name\s*\}\}/g, "Final Project Submission");
     output = output.replace(/\{\{\s*threshold\s*\}\}/g, "75");
     output = output.replace(/\{\{\s*attendance_rate\s*\}\}/g, "68");

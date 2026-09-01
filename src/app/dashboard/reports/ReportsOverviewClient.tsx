@@ -15,7 +15,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import DateFilterBar from "@/components/DateFilterBar";
-import { printReport, exportToCSV } from "@/lib/export";
+import { exportToCSV, printReport } from "@/lib/export";
+import { formatCurrency } from "@/lib/currency";
 
 interface ReportsOverviewClientProps {
   instituteName: string;
@@ -64,8 +65,8 @@ export default function ReportsOverviewClient({ instituteName, role }: ReportsOv
         ["Active Students", metrics.activeStudents],
         ["Overall Attendance", metrics.overallAttendancePct],
         ["Avg Academic Performance", metrics.overallAcademicPct],
-        ["Total Fees Collected", `$${metrics.totalFeesCollected}`],
-        ["Outstanding Fees", `$${metrics.totalOutstandingFees}`],
+        ["Total Fees Collected", formatCurrency(metrics.totalFeesCollected)],
+        ["Outstanding Fees", formatCurrency(metrics.totalOutstandingFees)],
         ["Active Staff", metrics.activeStaffCount],
         ["Pending Tasks", metrics.pendingTasksCount],
       ]
@@ -210,9 +211,9 @@ export default function ReportsOverviewClient({ instituteName, role }: ReportsOv
               </div>
             </div>
             <div className="mt-3">
-              <p className="text-2xl font-extrabold text-emerald-600 font-mono">${metrics.totalFeesCollected.toFixed(2)}</p>
+              <p className="text-2xl font-extrabold text-emerald-600 font-mono">{formatCurrency(metrics.totalFeesCollected)}</p>
               <p className="text-[11px] text-rose-500 font-semibold mt-1 font-mono">
-                Outstanding: ${metrics.totalOutstandingFees.toFixed(2)}
+                Outstanding: {formatCurrency(metrics.totalOutstandingFees)}
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-indigo-600 font-bold">

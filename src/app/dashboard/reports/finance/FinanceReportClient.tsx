@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BadgeDollarSign, Download, Printer, Eye, CreditCard } from "lucide-react";
 import DateFilterBar from "@/components/DateFilterBar";
 import { exportToCSV, printReport } from "@/lib/export";
+import { formatCurrency } from "@/lib/currency";
 
 interface FinanceReportClientProps {
   instituteName: string;
@@ -51,9 +52,9 @@ export default function FinanceReportClient({ instituteName }: FinanceReportClie
         f.student_code,
         f.name,
         f.course_name,
-        `$${f.final_fee.toFixed(2)}`,
-        `$${f.amount_paid.toFixed(2)}`,
-        `$${f.balance.toFixed(2)}`,
+        formatCurrency(f.final_fee),
+        formatCurrency(f.amount_paid),
+        formatCurrency(f.balance),
         f.status,
       ])
     );
@@ -120,23 +121,23 @@ export default function FinanceReportClient({ instituteName }: FinanceReportClie
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
             <span className="text-[11px] font-semibold text-slate-500 uppercase">Total Expected</span>
-            <p className="text-2xl font-extrabold text-slate-900 mt-1 font-mono">${reportData.summary.totalExpected.toFixed(2)}</p>
+            <p className="text-2xl font-extrabold text-slate-900 mt-1 font-mono">{formatCurrency(reportData.summary.totalExpected)}</p>
           </div>
           <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
             <span className="text-[11px] font-semibold text-emerald-600 uppercase">Collected</span>
-            <p className="text-2xl font-extrabold text-emerald-600 mt-1 font-mono">${reportData.summary.totalCollected.toFixed(2)}</p>
+            <p className="text-2xl font-extrabold text-emerald-600 mt-1 font-mono">{formatCurrency(reportData.summary.totalCollected)}</p>
           </div>
           <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
             <span className="text-[11px] font-semibold text-amber-600 uppercase">Outstanding</span>
-            <p className="text-2xl font-extrabold text-amber-600 mt-1 font-mono">${reportData.summary.totalOutstanding.toFixed(2)}</p>
+            <p className="text-2xl font-extrabold text-amber-600 mt-1 font-mono">{formatCurrency(reportData.summary.totalOutstanding)}</p>
           </div>
           <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
             <span className="text-[11px] font-semibold text-rose-600 uppercase">Overdue</span>
-            <p className="text-2xl font-extrabold text-rose-600 mt-1 font-mono">${reportData.summary.overdueAmount.toFixed(2)}</p>
+            <p className="text-2xl font-extrabold text-rose-600 mt-1 font-mono">{formatCurrency(reportData.summary.overdueAmount)}</p>
           </div>
           <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
             <span className="text-[11px] font-semibold text-indigo-600 uppercase">Due Soon</span>
-            <p className="text-2xl font-extrabold text-indigo-600 mt-1 font-mono">${reportData.summary.dueSoonAmount.toFixed(2)}</p>
+            <p className="text-2xl font-extrabold text-indigo-600 mt-1 font-mono">{formatCurrency(reportData.summary.dueSoonAmount)}</p>
           </div>
         </div>
       )}
@@ -149,7 +150,7 @@ export default function FinanceReportClient({ instituteName }: FinanceReportClie
             {reportData.paymentMethods.map((m: any) => (
               <div key={m.method} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-700">{m.method}</span>
-                <span className="text-sm font-extrabold text-emerald-600 font-mono">${m.amount.toFixed(2)}</span>
+                <span className="text-sm font-extrabold text-emerald-600 font-mono">{formatCurrency(m.amount)}</span>
               </div>
             ))}
           </div>
@@ -187,9 +188,9 @@ export default function FinanceReportClient({ instituteName }: FinanceReportClie
                     <td className="py-3.5 px-4 font-mono font-bold text-slate-900">{f.student_code}</td>
                     <td className="py-3.5 px-4 font-bold text-slate-900">{f.name}</td>
                     <td className="py-3.5 px-4">{f.course_name}</td>
-                    <td className="py-3.5 px-4 text-right font-mono">${f.final_fee.toFixed(2)}</td>
-                    <td className="py-3.5 px-4 text-right font-mono text-emerald-600 font-bold">${f.amount_paid.toFixed(2)}</td>
-                    <td className="py-3.5 px-4 text-right font-mono text-rose-600 font-extrabold">${f.balance.toFixed(2)}</td>
+                    <td className="py-3.5 px-4 text-right font-mono">{formatCurrency(f.final_fee)}</td>
+                    <td className="py-3.5 px-4 text-right font-mono text-emerald-600 font-bold">{formatCurrency(f.amount_paid)}</td>
+                    <td className="py-3.5 px-4 text-right font-mono text-rose-600 font-extrabold">{formatCurrency(f.balance)}</td>
                     <td className="py-3.5 px-4 text-center">
                       <span
                         className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${

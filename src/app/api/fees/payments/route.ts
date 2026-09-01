@@ -219,7 +219,7 @@ export async function POST(request: Request) {
         type: "Finance",
         category: "Payment Received",
         title: "Payment Received & Receipt Available",
-        message: `Payment of $${amt.toFixed(2)} received for receipt #${receiptNum}. Remaining balance: $${result.plan.balance.toFixed(2)}.`,
+        message: `Payment of ₹${amt.toLocaleString("en-IN")} received for receipt #${receiptNum}. Remaining balance: ₹${result.plan.balance.toLocaleString("en-IN")}.`,
         priority: "Normal",
         related_entity_type: "payment",
         related_entity_id: result.payment.id,

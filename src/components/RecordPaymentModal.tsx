@@ -8,6 +8,7 @@ import {
   Calendar,
   CreditCard,
 } from "lucide-react";
+import { formatCurrency } from "@/lib/currency";
 
 interface FeePlanItem {
   id: string;
@@ -81,7 +82,7 @@ export default function RecordPaymentModal({
       const amt = parseFloat(amount);
       if (!amt || amt <= 0) throw new Error("Please enter a valid amount greater than 0.");
       if (currentPlan && amt > currentPlan.balance + 0.01) {
-        throw new Error(`Payment amount ($${amt}) cannot exceed remaining balance ($${currentPlan.balance}).`);
+        throw new Error(`Payment amount (${formatCurrency(amt)}) cannot exceed remaining balance (${formatCurrency(currentPlan.balance)}).`);
       }
 
       const res = await fetch("/api/fees/payments", {
@@ -155,7 +156,7 @@ export default function RecordPaymentModal({
               <option value="">Select student account...</option>
               {feePlans.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.student.name} ({p.student.student_code}) — {p.course.name} [Bal: ${p.balance}]
+                  {p.student.name} ({p.student.student_code}) — {p.course.name} [Bal: {formatCurrency(p.balance)}]
                 </option>
               ))}
             </select>
@@ -164,19 +165,19 @@ export default function RecordPaymentModal({
           {currentPlan && (
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs flex justify-between">
               <span className="text-slate-500 font-medium">Outstanding Balance:</span>
-              <span className="font-bold text-slate-900 font-mono text-sm">${currentPlan.balance.toFixed(2)}</span>
+              <span className="font-bold text-slate-900 font-mono text-sm">{formatCurrency(currentPlan.balance)}</span>
             </div>
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                Payment Amount ($) <span className="text-red-500">*</span>
+                Payment Amount (₹) <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
-                min="0.01"
-                step="0.01"
+                min="1"
+                step="1"
                 required
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}

@@ -21,6 +21,7 @@ import {
 import CreateFeePlanModal from "@/components/CreateFeePlanModal";
 import RecordPaymentModal from "@/components/RecordPaymentModal";
 import PaymentReceiptModal from "@/components/PaymentReceiptModal";
+import { formatCurrency } from "@/lib/currency";
 
 interface FeePlanItem {
   id: string;
@@ -241,7 +242,7 @@ export default function FeesPage() {
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Expected</p>
-            <p className="text-2xl font-extrabold text-slate-900 mt-1 font-mono">${metrics.totalExpected.toFixed(2)}</p>
+            <p className="text-2xl font-extrabold text-slate-900 mt-1 font-mono">{formatCurrency(metrics.totalExpected)}</p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold">
             <BadgeDollarSign className="w-5 h-5" />
@@ -251,7 +252,7 @@ export default function FeesPage() {
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Collected</p>
-            <p className="text-2xl font-extrabold text-emerald-600 mt-1 font-mono">${metrics.totalCollected.toFixed(2)}</p>
+            <p className="text-2xl font-extrabold text-emerald-600 mt-1 font-mono">{formatCurrency(metrics.totalCollected)}</p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
             <CheckCircle2 className="w-5 h-5" />
@@ -261,7 +262,7 @@ export default function FeesPage() {
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Pending</p>
-            <p className="text-2xl font-extrabold text-brand-600 mt-1 font-mono">${metrics.totalPending.toFixed(2)}</p>
+            <p className="text-2xl font-extrabold text-brand-600 mt-1 font-mono">{formatCurrency(metrics.totalPending)}</p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold">
             <Clock className="w-5 h-5" />
@@ -271,7 +272,7 @@ export default function FeesPage() {
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Overdue Fees</p>
-            <p className="text-2xl font-extrabold text-rose-600 mt-1 font-mono">${metrics.overdue.toFixed(2)}</p>
+            <p className="text-2xl font-extrabold text-rose-600 mt-1 font-mono">{formatCurrency(metrics.overdue)}</p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
             <AlertTriangle className="w-5 h-5" />
@@ -460,16 +461,16 @@ export default function FeesPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right font-mono font-bold text-slate-900">
-                          ${plan.final_fee.toFixed(2)}
+                          {formatCurrency(plan.final_fee)}
                         </td>
                         <td className="px-6 py-4 text-right font-mono font-bold text-emerald-600">
-                          ${plan.amount_paid.toFixed(2)}
+                          {formatCurrency(plan.amount_paid)}
                         </td>
                         <td className="px-6 py-4 text-right font-mono font-bold text-brand-600">
-                          ${plan.balance.toFixed(2)}
+                          {formatCurrency(plan.balance)}
                         </td>
                         <td className="px-6 py-4 text-xs font-mono">
-                          {earliestDueDate ? new Date(earliestDueDate).toLocaleDateString() : "—"}
+                          {earliestDueDate ? new Date(earliestDueDate).toLocaleDateString("en-IN") : "—"}
                         </td>
                         <td className="px-6 py-4">
                           <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-md border ${badge.style}`}>
@@ -533,10 +534,10 @@ export default function FeesPage() {
                         </Link>
                       </td>
                       <td className="px-6 py-4 text-right font-mono font-extrabold text-rose-600">
-                        ${plan.balance.toFixed(2)}
+                        {formatCurrency(plan.balance)}
                       </td>
                       <td className="px-6 py-4 font-mono">
-                        {earliestDueDate ? new Date(earliestDueDate).toLocaleDateString() : "—"}
+                        {earliestDueDate ? new Date(earliestDueDate).toLocaleDateString("en-IN") : "—"}
                       </td>
                       <td className="px-6 py-4 font-mono font-bold text-rose-600">
                         {daysOverdue} days overdue
@@ -578,8 +579,8 @@ export default function FeesPage() {
                       {inst.student.name} ({inst.student.student_code})
                     </td>
                     <td className="px-6 py-4 font-semibold text-slate-800">{inst.name}</td>
-                    <td className="px-6 py-4 text-right font-mono font-bold text-amber-600">${inst.amount.toFixed(2)}</td>
-                    <td className="px-6 py-4 font-mono">{new Date(inst.due_date).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 text-right font-mono font-bold text-amber-600">{formatCurrency(inst.amount)}</td>
+                    <td className="px-6 py-4 font-mono">{new Date(inst.due_date).toLocaleDateString("en-IN")}</td>
                     <td className="px-6 py-4 text-right">
                       <button
                         onClick={() => {
@@ -615,9 +616,9 @@ export default function FeesPage() {
                   <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
                     <td className="px-6 py-4 font-mono font-bold text-brand-600">{p.receipt_number}</td>
                     <td className="px-6 py-4 font-bold text-slate-900">{p.student.name}</td>
-                    <td className="px-6 py-4 text-right font-mono font-bold text-emerald-600">${p.amount.toFixed(2)}</td>
+                    <td className="px-6 py-4 text-right font-mono font-bold text-emerald-600">{formatCurrency(p.amount)}</td>
                     <td className="px-6 py-4">{p.payment_method}</td>
-                    <td className="px-6 py-4 font-mono">{new Date(p.payment_date).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 font-mono">{new Date(p.payment_date).toLocaleDateString("en-IN")}</td>
                     <td className="px-6 py-4 font-mono text-slate-500">{p.reference_number || "—"}</td>
                     <td className="px-6 py-4 text-right">
                       <button

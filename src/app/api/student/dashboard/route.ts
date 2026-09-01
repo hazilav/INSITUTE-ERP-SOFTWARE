@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedStudent } from "@/lib/student";
 import { db } from "@/lib/db";
+import { formatCurrency } from "@/lib/currency";
 
 export const dynamic = "force-dynamic";
 
@@ -66,7 +67,7 @@ export async function GET() {
       where: { institute_id: institute.id, student_id: student.id },
     });
 
-    const feeBalanceDue = feePlan ? `$${feePlan.balance.toFixed(2)}` : "—";
+    const feeBalanceDue = feePlan ? formatCurrency(feePlan.balance) : "—";
 
     // 5. Today's Classes for Student Batch
     const now = new Date();

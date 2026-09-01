@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { formatCurrency } from "@/lib/currency";
 import Link from "next/link";
 import {
   Users,
@@ -314,7 +315,7 @@ export default async function DashboardPage() {
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pending Fees</p>
             <p className="text-3xl font-extrabold text-amber-600 mt-1 font-mono">
-              ${totalPendingFees.toFixed(2)}
+              {formatCurrency(totalPendingFees)}
             </p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">

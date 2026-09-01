@@ -98,7 +98,7 @@ export default function SettingsClient({
   const [allowLeave, setAllowLeave] = useState(institute.allow_leave_status ?? true);
 
   // Form states for Fees
-  const [currency, setCurrency] = useState(institute.default_currency || "USD");
+  const [currency, setCurrency] = useState(institute.default_currency || "INR");
   const [paymentMethods, setPaymentMethods] = useState(institute.payment_methods || "Cash,UPI,Bank Transfer,Card,Online,Other");
   const [feeReminderDays, setFeeReminderDays] = useState(institute.fee_reminder_days ?? 3);
 

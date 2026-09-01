@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getAuthenticatedStudent } from "@/lib/student";
 import { db } from "@/lib/db";
+import { formatCurrency } from "@/lib/currency";
 import Link from "next/link";
 import {
   GraduationCap,
@@ -77,7 +78,7 @@ export default async function StudentDashboardPage() {
     where: { institute_id: institute.id, student_id: student.id },
   });
 
-  const feeBalanceDue = feePlan ? `$${feePlan.balance.toFixed(2)} Due` : "—";
+  const feeBalanceDue = feePlan ? `${formatCurrency(feePlan.balance)} Due` : "—";
 
   // 5. Today's Classes for Student Batch
   const now = new Date();

@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { X, Printer, CheckCircle2, Building2 } from "lucide-react";
+import { formatCurrency } from "@/lib/currency";
 
 interface PaymentReceiptModalProps {
   isOpen: boolean;
@@ -91,7 +92,7 @@ export default function PaymentReceiptModal({
             <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
               <span className="text-[10px] font-bold text-slate-400 uppercase block">TRANSACTION DETAILS</span>
               <p className="font-semibold text-slate-800">Course: {receiptData.course_name}</p>
-              <p className="font-mono text-slate-600">Date: {new Date(receiptData.payment_date).toLocaleDateString()}</p>
+              <p className="font-mono text-slate-600">Date: {new Date(receiptData.payment_date).toLocaleDateString("en-IN")}</p>
               <p className="font-mono text-slate-600">Method: {receiptData.payment_method}</p>
               {receiptData.reference_number && (
                 <p className="font-mono text-slate-500">Ref: {receiptData.reference_number}</p>
@@ -103,17 +104,17 @@ export default function PaymentReceiptModal({
           <div className="p-5 rounded-2xl bg-brand-50/80 border border-brand-200 space-y-3">
             <div className="flex justify-between items-center text-xs text-brand-900 border-b border-brand-200/60 pb-2">
               <span>Previous Balance</span>
-              <span className="font-mono font-bold">${prevBal.toFixed(2)}</span>
+              <span className="font-mono font-bold">{formatCurrency(prevBal)}</span>
             </div>
 
             <div className="flex justify-between items-center">
               <span className="font-extrabold text-brand-950 text-sm uppercase">AMOUNT PAID</span>
-              <span className="font-mono font-extrabold text-brand-700 text-2xl">${receiptData.amount.toFixed(2)}</span>
+              <span className="font-mono font-extrabold text-brand-700 text-2xl">{formatCurrency(receiptData.amount)}</span>
             </div>
 
             <div className="flex justify-between items-center text-xs text-brand-900 border-t border-brand-200/60 pt-2">
               <span>Remaining Balance</span>
-              <span className="font-mono font-bold text-slate-900">${receiptData.remaining_balance.toFixed(2)}</span>
+              <span className="font-mono font-bold text-slate-900">{formatCurrency(receiptData.remaining_balance)}</span>
             </div>
           </div>
 

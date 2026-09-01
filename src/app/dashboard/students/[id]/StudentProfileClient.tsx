@@ -49,8 +49,10 @@ import ResetPasswordModal from "@/components/ResetPasswordModal";
 import PaymentReceiptModal from "@/components/PaymentReceiptModal";
 import Toast from "@/components/Toast";
 import { calculateGrade } from "@/lib/grading";
+import { exportToCSV } from "@/lib/export";
 import { getStudentPortalUrl } from "@/lib/urls";
 import { formatErrorMessage } from "@/lib/errors";
+import { formatCurrency } from "@/lib/currency";
 
 interface ActivityEvent {
   id: string;
@@ -306,7 +308,7 @@ export default function StudentProfileClient({
   const overallGrade = avgMarksPct !== null ? calculateGrade(parseFloat(avgMarksPct)) : "—";
 
   // Real Fee Balance Metrics for Student
-  const feeBalance = studentFeePlan ? `$${studentFeePlan.balance.toFixed(2)}` : "—";
+  const feeBalance = studentFeePlan ? formatCurrency(studentFeePlan.balance) : "—";
   const feeStatusLabel = studentFeePlan ? studentFeePlan.status : "No plan created";
 
   const getStatusBadgeStyle = (status: string) => {
@@ -812,7 +814,7 @@ export default function StudentProfileClient({
                 <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
                   <span className="text-[11px] font-semibold text-slate-400 uppercase">Course Fee</span>
                   <p className="text-xl font-extrabold text-slate-900 mt-0.5 font-mono">
-                    ${studentFeePlan.course_fee.toFixed(2)}
+                    {formatCurrency(studentFeePlan.course_fee)}
                   </p>
                 </div>
 
@@ -821,28 +823,28 @@ export default function StudentProfileClient({
                   <p className="text-xl font-extrabold text-purple-600 mt-0.5 font-mono">
                     {studentFeePlan.discount_type === "percentage"
                       ? `${studentFeePlan.discount_value}%`
-                      : `$${studentFeePlan.discount_value.toFixed(2)}`}
+                      : formatCurrency(studentFeePlan.discount_value)}
                   </p>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
                   <span className="text-[11px] font-semibold text-slate-400 uppercase">Final Fee</span>
                   <p className="text-xl font-extrabold text-slate-900 mt-0.5 font-mono">
-                    ${studentFeePlan.final_fee.toFixed(2)}
+                    {formatCurrency(studentFeePlan.final_fee)}
                   </p>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
                   <span className="text-[11px] font-semibold text-slate-400 uppercase">Amount Paid</span>
                   <p className="text-xl font-extrabold text-emerald-600 mt-0.5 font-mono">
-                    ${studentFeePlan.amount_paid.toFixed(2)}
+                    {formatCurrency(studentFeePlan.amount_paid)}
                   </p>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
                   <span className="text-[11px] font-semibold text-slate-400 uppercase">Balance</span>
                   <p className="text-xl font-extrabold text-brand-600 mt-0.5 font-mono">
-                    ${studentFeePlan.balance.toFixed(2)}
+                    {formatCurrency(studentFeePlan.balance)}
                   </p>
                 </div>
 
@@ -877,10 +879,10 @@ export default function StudentProfileClient({
                           <tr key={inst.id} className="hover:bg-slate-50/60">
                             <td className="px-4 py-3 font-bold text-slate-900">{inst.name}</td>
                             <td className="px-4 py-3 text-right font-mono font-bold text-slate-900">
-                              ${inst.amount.toFixed(2)}
+                              {formatCurrency(inst.amount)}
                             </td>
                             <td className="px-4 py-3 font-mono">
-                              {new Date(inst.due_date).toLocaleDateString()}
+                              {new Date(inst.due_date).toLocaleDateString("en-IN")}
                             </td>
                             <td className="px-4 py-3 text-right">
                               <span
@@ -930,11 +932,11 @@ export default function StudentProfileClient({
                           <tr key={p.id} className="hover:bg-slate-50/60">
                             <td className="px-4 py-3 font-mono font-bold text-brand-600">{p.receipt_number}</td>
                             <td className="px-4 py-3 text-right font-mono font-bold text-emerald-600">
-                              ${p.amount.toFixed(2)}
+                              {formatCurrency(p.amount)}
                             </td>
                             <td className="px-4 py-3">{p.payment_method}</td>
                             <td className="px-4 py-3 font-mono">
-                              {new Date(p.payment_date).toLocaleDateString()}
+                              {new Date(p.payment_date).toLocaleDateString("en-IN")}
                             </td>
                             <td className="px-4 py-3 font-mono text-slate-500">{p.reference_number || "—"}</td>
                             <td className="px-4 py-3 text-right">

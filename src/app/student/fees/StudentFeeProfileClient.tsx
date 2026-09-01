@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { BadgeDollarSign, Clock, Printer, CreditCard, CheckCircle2 } from "lucide-react";
 import PaymentReceiptModal from "@/components/PaymentReceiptModal";
+import { formatCurrency } from "@/lib/currency";
 
 interface StudentFeeProfileClientProps {
   feePlan: any;
@@ -42,7 +43,7 @@ export default function StudentFeeProfileClient({
             <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
               <span className="text-[11px] font-semibold text-slate-400 uppercase">Course Fee</span>
               <p className="text-xl font-extrabold text-slate-900 mt-0.5 font-mono">
-                ${feePlan.course_fee.toFixed(2)}
+                {formatCurrency(feePlan.course_fee)}
               </p>
             </div>
 
@@ -51,28 +52,28 @@ export default function StudentFeeProfileClient({
               <p className="text-xl font-extrabold text-purple-600 mt-0.5 font-mono">
                 {feePlan.discount_type === "percentage"
                   ? `${feePlan.discount_value}%`
-                  : `$${feePlan.discount_value.toFixed(2)}`}
+                  : formatCurrency(feePlan.discount_value)}
               </p>
             </div>
 
             <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
               <span className="text-[11px] font-semibold text-slate-400 uppercase">Final Fee</span>
               <p className="text-xl font-extrabold text-slate-900 mt-0.5 font-mono">
-                ${feePlan.final_fee.toFixed(2)}
+                {formatCurrency(feePlan.final_fee)}
               </p>
             </div>
 
             <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
               <span className="text-[11px] font-semibold text-slate-400 uppercase">Amount Paid</span>
               <p className="text-xl font-extrabold text-emerald-600 mt-0.5 font-mono">
-                ${feePlan.amount_paid.toFixed(2)}
+                {formatCurrency(feePlan.amount_paid)}
               </p>
             </div>
 
             <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
               <span className="text-[11px] font-semibold text-slate-400 uppercase">Balance Due</span>
               <p className="text-xl font-extrabold text-rose-600 mt-0.5 font-mono">
-                ${feePlan.balance.toFixed(2)}
+                {formatCurrency(feePlan.balance)}
               </p>
             </div>
 
@@ -107,10 +108,10 @@ export default function StudentFeeProfileClient({
                       <tr key={inst.id} className="hover:bg-slate-50/60">
                         <td className="px-4 py-3 font-bold text-slate-900">{inst.name}</td>
                         <td className="px-4 py-3 text-right font-mono font-bold text-slate-900">
-                          ${inst.amount.toFixed(2)}
+                          {formatCurrency(inst.amount)}
                         </td>
                         <td className="px-4 py-3 font-mono">
-                          {new Date(inst.due_date).toLocaleDateString()}
+                          {new Date(inst.due_date).toLocaleDateString("en-IN")}
                         </td>
                         <td className="px-4 py-3 text-right">
                           <span
@@ -160,11 +161,11 @@ export default function StudentFeeProfileClient({
                       <tr key={p.id} className="hover:bg-slate-50/60">
                         <td className="px-4 py-3 font-mono font-bold text-brand-600">{p.receipt_number}</td>
                         <td className="px-4 py-3 text-right font-mono font-bold text-emerald-600">
-                          ${p.amount.toFixed(2)}
+                          {formatCurrency(p.amount)}
                         </td>
                         <td className="px-4 py-3">{p.payment_method}</td>
                         <td className="px-4 py-3 font-mono">
-                          {new Date(p.payment_date).toLocaleDateString()}
+                          {new Date(p.payment_date).toLocaleDateString("en-IN")}
                         </td>
                         <td className="px-4 py-3 font-mono text-slate-500">{p.reference_number || "—"}</td>
                         <td className="px-4 py-3 text-right">

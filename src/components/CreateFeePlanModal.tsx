@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { calculateFinalFee } from "@/lib/finance";
+import { formatCurrency } from "@/lib/currency";
 
 interface OptionItem {
   id: string;
@@ -43,14 +44,14 @@ export default function CreateFeePlanModal({
 
   const [studentId, setStudentId] = useState("");
   const [courseId, setCourseId] = useState("");
-  const [courseFee, setCourseFee] = useState("1000");
+  const [courseFee, setCourseFee] = useState("50000");
   const [discountType, setDiscountType] = useState("fixed");
   const [discountValue, setDiscountValue] = useState("0");
   const [paymentType, setPaymentType] = useState("full");
 
   // Installments state
   const [installments, setInstallments] = useState<InstallmentRow[]>([
-    { name: "Installment 1", amount: "500", due_date: new Date().toISOString().split("T")[0] },
+    { name: "Installment 1", amount: "25000", due_date: new Date().toISOString().split("T")[0] },
   ]);
 
   const [loading, setLoading] = useState(false);
@@ -118,7 +119,7 @@ export default function CreateFeePlanModal({
         });
 
         if (Math.abs(instTotal - finalFee) > 0.5) {
-          throw new Error(`Sum of installment amounts (${instTotal}) must equal the Final Fee (${finalFee}).`);
+          throw new Error(`Sum of installment amounts (${formatCurrency(instTotal)}) must equal the Final Fee (${formatCurrency(finalFee)}).`);
         }
       }
 
@@ -219,12 +220,12 @@ export default function CreateFeePlanModal({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                Total Course Fee ($) <span className="text-red-500">*</span>
+                Total Course Fee (₹) <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
                 min="0"
-                step="0.01"
+                step="1"
                 required
                 value={courseFee}
                 onChange={(e) => setCourseFee(e.target.value)}
@@ -241,7 +242,7 @@ export default function CreateFeePlanModal({
                 onChange={(e) => setDiscountType(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
               >
-                <option value="fixed">Fixed Amount ($)</option>
+                <option value="fixed">Fixed Amount (₹)</option>
                 <option value="percentage">Percentage (%)</option>
               </select>
             </div>
@@ -253,7 +254,7 @@ export default function CreateFeePlanModal({
               <input
                 type="number"
                 min="0"
-                step="0.01"
+                step="1"
                 value={discountValue}
                 onChange={(e) => setDiscountValue(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white font-mono"
@@ -264,7 +265,7 @@ export default function CreateFeePlanModal({
           {/* Final Fee Summary Box */}
           <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
             <span className="text-xs font-bold text-emerald-900 uppercase">Calculated Final Fee</span>
-            <span className="text-2xl font-extrabold text-emerald-700 font-mono">${finalFee.toFixed(2)}</span>
+            <span className="text-2xl font-extrabold text-emerald-700 font-mono">{formatCurrency(finalFee)}</span>
           </div>
 
           <div>
@@ -309,7 +310,7 @@ export default function CreateFeePlanModal({
                       type="number"
                       value={inst.amount}
                       onChange={(e) => handleInstallmentChange(idx, "amount", e.target.value)}
-                      placeholder="Amount ($)"
+                      placeholder="Amount (₹)"
                       className="w-28 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold"
                     />
                     <input
