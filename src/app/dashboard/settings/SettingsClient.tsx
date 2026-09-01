@@ -56,6 +56,66 @@ const MODULE_KEYS = [
   { key: "settings", label: "Institute Settings" },
 ];
 
+async function optimizeImageForUpload(file: File): Promise<File> {
+  const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+  if (ext === ".svg" || ext === ".gif" || file.size <= 1.5 * 1024 * 1024) {
+    return file;
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      img.src = e.target?.result as string;
+    };
+
+    img.onload = () => {
+      const maxDim = 1600;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return resolve(file);
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (blob && blob.size < file.size) {
+            const optimizedFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".webp"), {
+              type: "image/webp",
+              lastModified: Date.now(),
+            });
+            resolve(optimizedFile);
+          } else {
+            resolve(file);
+          }
+        },
+        "image/webp",
+        0.92
+      );
+    };
+
+    img.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function SettingsClient({
   institute: initialInst,
   users: initialUsers,
@@ -143,8 +203,8 @@ export default function SettingsClient({
   ];
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const rawFile = e.target.files?.[0];
+    if (!rawFile) return;
 
     const allowedExtensions = [
       ".jpg",
@@ -159,7 +219,7 @@ export default function SettingsClient({
       ".avif",
       ".ico",
     ];
-    const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+    const ext = rawFile.name.substring(rawFile.name.lastIndexOf(".")).toLowerCase();
 
     if (!allowedExtensions.includes(ext)) {
       setMessage({
@@ -169,7 +229,7 @@ export default function SettingsClient({
       return;
     }
 
-    if (file.size > 20 * 1024 * 1024) {
+    if (rawFile.size > 20 * 1024 * 1024) {
       setMessage({ type: "error", text: "File size exceeds maximum 20MB limit." });
       return;
     }
@@ -178,49 +238,80 @@ export default function SettingsClient({
     setUploadProgress(0);
     setMessage(null);
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("type", "logos");
+    try {
+      const fileToUpload = await optimizeImageForUpload(rawFile);
 
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/upload", true);
+      const formData = new FormData();
+      formData.append("file", fileToUpload);
+      formData.append("type", "logos");
 
-    xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const percent = Math.round((event.loaded / event.total) * 100);
-        setUploadProgress(percent);
-      }
-    };
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "/api/upload", true);
 
-    xhr.onload = () => {
-      setLogoUploading(false);
-      setUploadProgress(null);
-
-      try {
-        const data = JSON.parse(xhr.responseText);
-        if (xhr.status >= 200 && xhr.status < 300 && data.url) {
-          setInstLogo(data.url);
-          setMessage({ type: "success", text: "Logo uploaded. Click Save Changes to apply." });
-        } else {
-          setMessage({ type: "error", text: data.error || "Failed to upload logo." });
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          setUploadProgress(percent);
         }
-      } catch (err: any) {
-        setMessage({ type: "error", text: "Failed to parse upload response." });
-      }
-    };
+      };
 
-    xhr.onerror = () => {
+      xhr.onload = async () => {
+        setLogoUploading(false);
+        setUploadProgress(null);
+
+        try {
+          const data = JSON.parse(xhr.responseText);
+          if (xhr.status >= 200 && xhr.status < 300 && data.url) {
+            setInstLogo(data.url);
+            // Save logo directly to database
+            await fetch("/api/settings/institute", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ logo: data.url }),
+            });
+            setMessage({ type: "success", text: "Institute logo uploaded & saved successfully!" });
+          } else {
+            setMessage({ type: "error", text: data.error || "Failed to upload logo." });
+          }
+        } catch (err: any) {
+          setMessage({ type: "error", text: "Failed to parse upload response." });
+        }
+      };
+
+      xhr.onerror = () => {
+        setLogoUploading(false);
+        setUploadProgress(null);
+        setMessage({ type: "error", text: "Network error during upload. Please try again." });
+      };
+
+      xhr.send(formData);
+    } catch (err: any) {
       setLogoUploading(false);
       setUploadProgress(null);
-      setMessage({ type: "error", text: "Network error during upload. Please try again." });
-    };
-
-    xhr.send(formData);
+      setMessage({ type: "error", text: "Error preparing image for upload." });
+    }
   };
 
-  const handleLogoRemove = () => {
+  const handleLogoRemove = async () => {
+    setSaving(true);
     setInstLogo("");
-    setMessage({ type: "success", text: "Logo removed. Click Save Changes to apply." });
+    try {
+      const res = await fetch("/api/settings/institute", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ logo: "" }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setMessage({ type: "success", text: "Logo removed successfully." });
+      } else {
+        setMessage({ type: "error", text: data.error || "Failed to remove logo." });
+      }
+    } catch (err: any) {
+      setMessage({ type: "error", text: err.message || "Failed to remove logo." });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDeleteAccount = async () => {
