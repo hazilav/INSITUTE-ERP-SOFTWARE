@@ -15,26 +15,27 @@ export async function POST(request: Request) {
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
+    const folderType = (formData.get("type") as string) || "activities";
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Allowed Extensions & Max Size (10MB)
-    const allowedExtensions = [".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png", ".zip"];
+    // Allowed Extensions & Max Size (10MB default, 5MB for logos)
+    const allowedExtensions = [".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png", ".webp", ".zip"];
     const ext = path.extname(file.name).toLowerCase();
 
     if (!allowedExtensions.includes(ext)) {
       return NextResponse.json(
-        { error: "Invalid file format. Allowed: PDF, DOC, DOCX, JPG, PNG, ZIP." },
+        { error: "Invalid file format. Allowed: PNG, JPG, JPEG, WebP, PDF, DOC, DOCX, ZIP." },
         { status: 400 }
       );
     }
 
-    const maxSizeBytes = 10 * 1024 * 1024; // 10MB
+    const maxSizeBytes = folderType === "logos" ? 5 * 1024 * 1024 : 10 * 1024 * 1024; // 5MB for logos, 10MB general
     if (file.size > maxSizeBytes) {
       return NextResponse.json(
-        { error: "File size exceeds maximum 10MB limit." },
+        { error: `File size exceeds maximum ${folderType === "logos" ? "5MB" : "10MB"} limit.` },
         { status: 400 }
       );
     }
@@ -42,15 +43,16 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Save to public/uploads/activities
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "activities");
+    // Determine subfolder (logos vs activities)
+    const safeSubFolder = folderType === "logos" ? "logos" : "activities";
+    const uploadDir = path.join(process.cwd(), "public", "uploads", safeSubFolder);
     await mkdir(uploadDir, { recursive: true });
 
     const uniqueFilename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}${ext}`;
     const filePath = path.join(uploadDir, uniqueFilename);
     await writeFile(filePath, buffer);
 
-    const publicUrl = `/uploads/activities/${uniqueFilename}`;
+    const publicUrl = `/uploads/${safeSubFolder}/${uniqueFilename}`;
 
     return NextResponse.json({
       success: true,

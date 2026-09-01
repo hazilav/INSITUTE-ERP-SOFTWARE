@@ -12,6 +12,7 @@ function LoginFormContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [sessionExpired, setSessionExpired] = useState(false);
+  const [accountDeleted, setAccountDeleted] = useState(false);
   const [forgotModalOpen, setForgotModalOpen] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -19,6 +20,9 @@ function LoginFormContent() {
   useEffect(() => {
     if (searchParams.get("expired") === "true") {
       setSessionExpired(true);
+    }
+    if (searchParams.get("deleted") === "true") {
+      setAccountDeleted(true);
     }
   }, [searchParams]);
 
@@ -74,6 +78,13 @@ function LoginFormContent() {
             <div className="mb-6 p-4 rounded-xl bg-amber-950/60 border border-amber-800/80 text-amber-200 text-sm flex items-start gap-3 animate-in fade-in duration-200">
               <Clock className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
               <div>Your session has expired. Please log in again to continue.</div>
+            </div>
+          )}
+
+          {accountDeleted && (
+            <div className="mb-6 p-4 rounded-xl bg-emerald-950/60 border border-emerald-800/80 text-emerald-200 text-sm flex items-start gap-3 animate-in fade-in duration-200">
+              <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+              <div>Your account has been deleted successfully.</div>
             </div>
           )}
 

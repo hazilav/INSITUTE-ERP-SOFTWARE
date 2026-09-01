@@ -28,6 +28,8 @@ import {
   Copy,
   Share2,
   Link2,
+  Upload,
+  Trash2,
 } from "lucide-react";
 import { getStudentPortalUrl, getStaffPortalUrl, sharePortalLink } from "@/lib/urls";
 import { formatErrorMessage } from "@/lib/errors";
@@ -36,7 +38,7 @@ interface SettingsClientProps {
   institute: any;
   users: any[];
   initialPermissions: any[];
-  currentUser: { id: string; name: string; role: string };
+  currentUser: { id: string; name: string; email: string; role: string };
 }
 
 const MODULE_KEYS = [
@@ -118,11 +120,19 @@ export default function SettingsClient({
   const [newUserRole, setNewUserRole] = useState("STAFF");
   const [newUserPassword, setNewUserPassword] = useState("");
 
+  // Logo & Account Deletion States
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [deleteStep1Open, setDeleteStep1Open] = useState(false);
+  const [deleteStep2Open, setDeleteStep2Open] = useState(false);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
   const isOwner = currentUser.role === "OWNER";
 
   const categories = [
     { id: "institute", label: "Institute Info", icon: Building2 },
     { id: "users", label: "Users & Roles", icon: Users },
+    { id: "account", label: "Account Settings", icon: UserCheck },
     { id: "student-portal", label: "Student Portal", icon: GraduationCap },
     { id: "academic", label: "Academic", icon: Sliders },
     { id: "attendance", label: "Attendance", icon: CalendarCheck },
@@ -130,6 +140,85 @@ export default function SettingsClient({
     { id: "notifications", label: "Notifications", icon: Bell },
     { id: "danger", label: "Danger Zone", icon: AlertTriangle },
   ];
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+    if (!allowedTypes.includes(file.type.toLowerCase())) {
+      setMessage({ type: "error", text: "Invalid file format. Allowed: PNG, JPG, JPEG, WebP." });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage({ type: "error", text: "File size exceeds maximum 5MB limit." });
+      return;
+    }
+
+    setLogoUploading(true);
+    setMessage(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", "logos");
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (res.ok && data.url) {
+        setInstLogo(data.url);
+        setMessage({ type: "success", text: "Logo uploaded preview ready. Click Save Changes to apply." });
+      } else {
+        setMessage({ type: "error", text: data.error || "Failed to upload logo." });
+      }
+    } catch (err: any) {
+      setMessage({ type: "error", text: err.message || "Failed to upload logo." });
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  const handleLogoRemove = () => {
+    setInstLogo("");
+    setMessage({ type: "success", text: "Logo removed. Click Save Changes to apply." });
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmEmail.trim().toLowerCase() !== currentUser.email.trim().toLowerCase()) {
+      return;
+    }
+
+    setDeletingAccount(true);
+    setMessage(null);
+
+    try {
+      const res = await fetch("/api/account/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: deleteConfirmEmail }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setDeleteStep2Open(false);
+        window.location.href = data.redirectUrl || "/login?deleted=true";
+      } else {
+        setMessage({ type: "error", text: data.error || "Unable to delete your account right now. Please try again." });
+        setDeleteStep2Open(false);
+      }
+    } catch (err: any) {
+      setMessage({ type: "error", text: err.message || "Unable to delete your account right now. Please try again." });
+      setDeleteStep2Open(false);
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
 
   const handleSaveInstitute = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -486,6 +575,52 @@ export default function SettingsClient({
                   <Building2 className="w-5 h-5 text-brand-600" /> Institute Information
                 </h3>
                 <span className="text-[11px] font-bold text-slate-400">ID: {institute.id}</span>
+              </div>
+
+              {/* Institute Logo Section */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+                <label className="block font-bold text-slate-800 text-xs">Institute Logo</label>
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                  {/* Logo Preview */}
+                  <div className="w-20 h-20 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-center overflow-hidden shrink-0">
+                    {instLogo ? (
+                      <img src={instLogo} alt="Institute Logo" className="w-full h-full object-cover" />
+                    ) : (
+                      <Building2 className="w-8 h-8 text-slate-400" />
+                    )}
+                  </div>
+
+                  <div className="space-y-2 text-center sm:text-left w-full">
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                      <label className="cursor-pointer px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-sm transition-all inline-flex items-center gap-1.5">
+                        <Upload className="w-3.5 h-3.5" />
+                        {logoUploading ? "Uploading..." : "Upload Logo"}
+                        <input
+                          type="file"
+                          accept="image/png, image/jpeg, image/jpg, image/webp"
+                          className="hidden"
+                          onChange={handleLogoUpload}
+                          disabled={logoUploading || saving || !isOwner}
+                        />
+                      </label>
+
+                      {instLogo && (
+                        <button
+                          type="button"
+                          onClick={handleLogoRemove}
+                          disabled={saving || logoUploading || !isOwner}
+                          className="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200 transition-all inline-flex items-center gap-1.5"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Remove Logo
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      PNG, JPG, JPEG or WebP (Max 5MB). Preview displayed on headers, dashboards & portal views.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1181,6 +1316,66 @@ export default function SettingsClient({
             </form>
           )}
 
+          {/* TAB: ACCOUNT SETTINGS */}
+          {activeTab === "account" && (
+            <div className="space-y-6 text-xs">
+              <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                  <UserCheck className="w-5 h-5 text-brand-600" /> Account Settings
+                </h3>
+              </div>
+
+              {/* Account Information */}
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-4">
+                <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider">
+                  Account Information
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <span className="block text-slate-400 font-medium mb-1">Full Name</span>
+                    <p className="font-bold text-slate-900 text-sm">{currentUser.name}</p>
+                  </div>
+                  <div>
+                    <span className="block text-slate-400 font-medium mb-1">Email Address</span>
+                    <p className="font-bold text-slate-900 text-sm">{currentUser.email}</p>
+                  </div>
+                  <div>
+                    <span className="block text-slate-400 font-medium mb-1">Assigned Role</span>
+                    <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-bold uppercase bg-brand-100 text-brand-700 border border-brand-200">
+                      {currentUser.role}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block text-slate-400 font-medium mb-1">Institute Workspace</span>
+                    <p className="font-bold text-slate-900 text-sm">{institute.name}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Danger Zone */}
+              <div className="p-5 rounded-2xl bg-rose-50/40 border border-rose-200 space-y-4">
+                <div>
+                  <h4 className="font-extrabold text-rose-900 text-xs uppercase tracking-wider flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-600" /> Danger Zone
+                  </h4>
+                  <p className="text-slate-600 text-xs mt-1">
+                    Deleting your account is permanent and cannot be undone.
+                  </p>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setDeleteStep1Open(true)}
+                    className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md shadow-rose-600/20 transition-all flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" /> Delete Account
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* TAB 8: DANGER ZONE */}
           {activeTab === "danger" && (
             <div className="space-y-6 text-xs">
@@ -1319,6 +1514,92 @@ export default function SettingsClient({
             />
           </div>
         </form>
+      </Modal>
+
+      {/* Delete Step 1 Confirmation Modal */}
+      <Modal
+        isOpen={deleteStep1Open}
+        onClose={() => setDeleteStep1Open(false)}
+        title="Delete Account?"
+        subtitle="Permanent Action"
+        icon={<AlertTriangle className="w-5 h-5 text-rose-600" />}
+        maxWidth="md"
+      >
+        <div className="p-2 space-y-4 text-center">
+          <p className="text-xs text-slate-600 leading-relaxed">
+            This action is permanent. Your account will be deleted and you may lose access to this institute.
+          </p>
+          <div className="flex items-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setDeleteStep1Open(false)}
+              className="flex-1 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDeleteStep1Open(false);
+                setDeleteStep2Open(true);
+                setDeleteConfirmEmail("");
+              }}
+              className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md shadow-rose-600/20 transition-all"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Step 2 Confirmation Modal */}
+      <Modal
+        isOpen={deleteStep2Open}
+        onClose={() => setDeleteStep2Open(false)}
+        title="Are you absolutely sure?"
+        subtitle="Email Confirmation Required"
+        icon={<Trash2 className="w-5 h-5 text-rose-600" />}
+        maxWidth="md"
+      >
+        <div className="p-2 space-y-4 text-center">
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Deleting your account cannot be undone. Enter your email to confirm:
+          </p>
+          <p className="text-xs font-mono font-bold text-slate-800 bg-slate-100 py-1.5 px-3 rounded-xl inline-block select-all border border-slate-200">
+            {currentUser.email}
+          </p>
+
+          <div className="space-y-2 text-left pt-2">
+            <input
+              type="email"
+              value={deleteConfirmEmail}
+              onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+              placeholder="Enter your email to confirm"
+              className="w-full p-2.5 rounded-xl border border-slate-300 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+            />
+          </div>
+
+          <div className="flex items-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setDeleteStep2Open(false)}
+              className="flex-1 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteAccount}
+              disabled={
+                deletingAccount ||
+                deleteConfirmEmail.trim().toLowerCase() !== currentUser.email.trim().toLowerCase()
+              }
+              className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md shadow-rose-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {deletingAccount ? "Deleting..." : "Delete My Account"}
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

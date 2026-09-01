@@ -32,6 +32,7 @@ interface StudentLayoutProps {
     batch?: { name: string } | null;
   };
   instituteName: string;
+  instituteLogo?: string | null;
   instituteMode?: string;
 }
 
@@ -39,6 +40,7 @@ export default function StudentLayout({
   children,
   student,
   instituteName,
+  instituteLogo,
   instituteMode = "hybrid",
 }: StudentLayoutProps) {
   const pathname = usePathname();
@@ -58,10 +60,12 @@ export default function StudentLayout({
   navItems.push(
     { name: "Attendance", href: "/student/attendance", icon: CalendarCheck },
     { name: "Activities", href: "/student/activities", icon: ClipboardList },
-    { name: "Results", href: "/student/marks", icon: FileBarChart },
+    { name: "Marks", href: "/student/marks", icon: FileBarChart },
     { name: "Fees", href: "/student/fees", icon: BadgeDollarSign },
-    { name: "My Tasks", href: "/student/tasks", icon: CheckSquare },
-    { name: "Profile", href: "/student/profile", icon: User }
+    { name: "Tasks", href: "/student/tasks", icon: CheckSquare },
+    { name: "Certificates", href: "/student/certificates", icon: GraduationCap },
+    { name: "Documents", href: "/student/documents", icon: ClipboardList },
+    { name: "My Profile", href: "/student/profile", icon: User }
   );
 
   const handleLogout = async () => {
@@ -90,9 +94,13 @@ export default function StudentLayout({
         {/* Header */}
         <div className="h-16 px-5 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3 overflow-hidden">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-indigo-500 text-white flex items-center justify-center font-bold text-base shadow-sm shrink-0">
-              <Building2 className="w-4 h-4" />
-            </div>
+            {instituteLogo ? (
+              <img src={instituteLogo} alt={instituteName} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+            ) : (
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-indigo-500 text-white flex items-center justify-center font-bold text-base shadow-sm shrink-0">
+                <Building2 className="w-4 h-4" />
+              </div>
+            )}
             <div className="truncate">
               <h1 className="font-bold text-white text-xs truncate">{instituteName}</h1>
               <p className="text-[10px] text-brand-400 font-mono tracking-wider uppercase">Student Portal</p>
