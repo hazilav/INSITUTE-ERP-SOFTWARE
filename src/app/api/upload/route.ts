@@ -21,29 +21,62 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Allowed Extensions & Max Size (10MB default, 5MB for logos)
-    const allowedExtensions = [".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png", ".webp", ".zip"];
     const ext = path.extname(file.name).toLowerCase();
+
+    // Allowed logo formats: JPG, JPEG, PNG, WEBP, GIF, SVG, BMP, TIFF, TIF, AVIF, ICO
+    const allowedLogoExtensions = [
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".webp",
+      ".gif",
+      ".svg",
+      ".bmp",
+      ".tiff",
+      ".tif",
+      ".avif",
+      ".ico",
+    ];
+    const allowedGeneralExtensions = [".pdf", ".doc", ".docx", ".zip", ...allowedLogoExtensions];
+
+    const allowedExtensions = folderType === "logos" ? allowedLogoExtensions : allowedGeneralExtensions;
 
     if (!allowedExtensions.includes(ext)) {
       return NextResponse.json(
-        { error: "Invalid file format. Allowed: PNG, JPG, JPEG, WebP, PDF, DOC, DOCX, ZIP." },
+        {
+          error:
+            folderType === "logos"
+              ? "Invalid image format. Supported: JPG, JPEG, PNG, WEBP, GIF, SVG, BMP, TIFF, AVIF, ICO."
+              : "Invalid file format.",
+        },
         { status: 400 }
       );
     }
 
-    const maxSizeBytes = folderType === "logos" ? 5 * 1024 * 1024 : 10 * 1024 * 1024; // 5MB for logos, 10MB general
+    // 20 MB max for logos, 10 MB for general files
+    const maxSizeBytes = folderType === "logos" ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
     if (file.size > maxSizeBytes) {
       return NextResponse.json(
-        { error: `File size exceeds maximum ${folderType === "logos" ? "5MB" : "10MB"} limit.` },
+        { error: `File size exceeds maximum ${folderType === "logos" ? "20MB" : "10MB"} limit.` },
         { status: 400 }
       );
     }
 
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    let buffer = Buffer.from(bytes);
 
-    // Determine subfolder (logos vs activities)
+    // Sanitize SVG files securely before saving
+    if (ext === ".svg") {
+      let content = buffer.toString("utf8");
+      content = content
+        .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+        .replace(/on\w+\s*=\s*(['"]).*?\1/gi, "")
+        .replace(/on\w+\s*=\s*[^>\s]+/gi, "")
+        .replace(/javascript\s*:/gi, "");
+      buffer = Buffer.from(content, "utf8");
+    }
+
+    // Save file
     const safeSubFolder = folderType === "logos" ? "logos" : "activities";
     const uploadDir = path.join(process.cwd(), "public", "uploads", safeSubFolder);
     await mkdir(uploadDir, { recursive: true });

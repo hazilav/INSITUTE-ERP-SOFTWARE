@@ -122,6 +122,7 @@ export default function SettingsClient({
 
   // Logo & Account Deletion States
   const [logoUploading, setLogoUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [deleteStep1Open, setDeleteStep1Open] = useState(false);
   const [deleteStep2Open, setDeleteStep2Open] = useState(false);
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState("");
@@ -145,42 +146,76 @@ export default function SettingsClient({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
-    if (!allowedTypes.includes(file.type.toLowerCase())) {
-      setMessage({ type: "error", text: "Invalid file format. Allowed: PNG, JPG, JPEG, WebP." });
+    const allowedExtensions = [
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".webp",
+      ".gif",
+      ".svg",
+      ".bmp",
+      ".tiff",
+      ".tif",
+      ".avif",
+      ".ico",
+    ];
+    const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+
+    if (!allowedExtensions.includes(ext)) {
+      setMessage({
+        type: "error",
+        text: "Invalid image format. Supported: JPG, JPEG, PNG, WEBP, GIF, SVG, BMP, TIFF, AVIF, ICO.",
+      });
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setMessage({ type: "error", text: "File size exceeds maximum 5MB limit." });
+    if (file.size > 20 * 1024 * 1024) {
+      setMessage({ type: "error", text: "File size exceeds maximum 20MB limit." });
       return;
     }
 
     setLogoUploading(true);
+    setUploadProgress(0);
     setMessage(null);
 
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("type", "logos");
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("type", "logos");
 
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/upload", true);
 
-      const data = await res.json();
-      if (res.ok && data.url) {
-        setInstLogo(data.url);
-        setMessage({ type: "success", text: "Logo uploaded preview ready. Click Save Changes to apply." });
-      } else {
-        setMessage({ type: "error", text: data.error || "Failed to upload logo." });
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        setUploadProgress(percent);
       }
-    } catch (err: any) {
-      setMessage({ type: "error", text: err.message || "Failed to upload logo." });
-    } finally {
+    };
+
+    xhr.onload = () => {
       setLogoUploading(false);
-    }
+      setUploadProgress(null);
+
+      try {
+        const data = JSON.parse(xhr.responseText);
+        if (xhr.status >= 200 && xhr.status < 300 && data.url) {
+          setInstLogo(data.url);
+          setMessage({ type: "success", text: "Logo uploaded. Click Save Changes to apply." });
+        } else {
+          setMessage({ type: "error", text: data.error || "Failed to upload logo." });
+        }
+      } catch (err: any) {
+        setMessage({ type: "error", text: "Failed to parse upload response." });
+      }
+    };
+
+    xhr.onerror = () => {
+      setLogoUploading(false);
+      setUploadProgress(null);
+      setMessage({ type: "error", text: "Network error during upload. Please try again." });
+    };
+
+    xhr.send(formData);
   };
 
   const handleLogoRemove = () => {
@@ -584,7 +619,7 @@ export default function SettingsClient({
                   {/* Logo Preview */}
                   <div className="w-20 h-20 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-center overflow-hidden shrink-0">
                     {instLogo ? (
-                      <img src={instLogo} alt="Institute Logo" className="w-full h-full object-cover" />
+                      <img src={instLogo} alt="Institute Logo" className="w-full h-full object-contain p-1" />
                     ) : (
                       <Building2 className="w-8 h-8 text-slate-400" />
                     )}
@@ -594,10 +629,14 @@ export default function SettingsClient({
                     <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                       <label className="cursor-pointer px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-sm transition-all inline-flex items-center gap-1.5">
                         <Upload className="w-3.5 h-3.5" />
-                        {logoUploading ? "Uploading..." : "Upload Logo"}
+                        {logoUploading
+                          ? uploadProgress !== null
+                            ? `Uploading ${uploadProgress}%...`
+                            : "Uploading..."
+                          : "Upload Logo"}
                         <input
                           type="file"
-                          accept="image/png, image/jpeg, image/jpg, image/webp"
+                          accept=".jpg,.jpeg,.png,.webp,.gif,.svg,.bmp,.tiff,.tif,.avif,.ico"
                           className="hidden"
                           onChange={handleLogoUpload}
                           disabled={logoUploading || saving || !isOwner}
@@ -616,8 +655,18 @@ export default function SettingsClient({
                         </button>
                       )}
                     </div>
+
+                    {uploadProgress !== null && (
+                      <div className="w-full max-w-xs bg-slate-200 h-2 rounded-full overflow-hidden">
+                        <div
+                          className="bg-brand-600 h-full transition-all duration-150"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                    )}
+
                     <p className="text-[11px] text-slate-400">
-                      PNG, JPG, JPEG or WebP (Max 5MB). Preview displayed on headers, dashboards & portal views.
+                      JPG, JPEG, PNG, WEBP, GIF, SVG, BMP, TIFF, AVIF or ICO (Max 20MB). Displayed across all portals and headers.
                     </p>
                   </div>
                 </div>
