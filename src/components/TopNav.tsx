@@ -44,22 +44,22 @@ export default function TopNav({ user, institute, onOpenSidebar }: TopNavProps) 
         {/* Center Search Input Trigger */}
         <div
           onClick={() => setSearchOpen(true)}
-          className="flex items-center justify-between cursor-pointer max-w-md w-full mx-2 sm:mx-4 px-3.5 py-1.5 bg-slate-100/80 hover:bg-slate-100 border border-slate-200/80 rounded-xl text-xs text-slate-500 transition-all shadow-xs"
+          className="flex items-center justify-between cursor-pointer max-w-md flex-1 min-w-0 mx-1.5 sm:mx-4 px-2.5 sm:px-3.5 py-1.5 bg-slate-100/80 hover:bg-slate-100 border border-slate-200/80 rounded-xl text-xs text-slate-500 transition-all shadow-xs"
         >
-          <div className="flex items-center gap-2 truncate">
+          <div className="flex items-center gap-2 min-w-0 truncate">
             <Search className="w-4 h-4 text-brand-600 shrink-0" />
-            <span className="font-medium text-slate-600 truncate">Search students, courses, classes...</span>
+            <span className="font-medium text-slate-600 truncate text-[11px] sm:text-xs">Search students, courses...</span>
           </div>
-          <kbd className="hidden md:inline-block px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-400 bg-white border border-slate-200 rounded">
+          <kbd className="hidden md:inline-block px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-400 bg-white border border-slate-200 rounded shrink-0">
             Ctrl K
           </kbd>
         </div>
 
         {/* Right section */}
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
           <NotificationBell isStudent={false} />
 
-          <div className="h-6 w-[1px] bg-slate-200" />
+          <div className="hidden sm:block h-6 w-[1px] bg-slate-200" />
 
           <UserProfileMenu user={user} institute={institute} />
         </div>

@@ -81,7 +81,7 @@ export default function PaymentReceiptModal({
           </div>
 
           {/* Student & Payment Detail Grid */}
-          <div className="grid grid-cols-2 gap-4 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
               <span className="text-[10px] font-bold text-slate-400 uppercase block">PAID BY STUDENT</span>
               <p className="font-bold text-slate-900 text-sm">{receiptData.student.name}</p>

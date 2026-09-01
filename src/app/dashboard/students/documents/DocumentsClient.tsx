@@ -195,7 +195,7 @@ export default function DocumentsClient({ instituteName, students }: DocumentsCl
 
       {/* Search & Filter Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs text-xs">
-        <div className="flex items-center gap-2 flex-1 min-w-[240px]">
+        <div className="flex items-center gap-2 flex-1 min-w-0 sm:min-w-[240px]">
           <Search className="w-4 h-4 text-slate-400" />
           <input
             type="text"
@@ -336,7 +336,7 @@ export default function DocumentsClient({ instituteName, students }: DocumentsCl
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Document Type *</label>
                   <select

@@ -117,7 +117,7 @@ export default function MobileNav({ role }: MobileNavProps) {
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                 {staffMoreItems.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -199,7 +199,7 @@ export default function MobileNav({ role }: MobileNavProps) {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
               {ownerMoreItems.map((item) => {
                 const Icon = item.icon;
                 return (

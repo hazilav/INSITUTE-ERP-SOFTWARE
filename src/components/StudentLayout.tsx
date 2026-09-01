@@ -181,7 +181,7 @@ export default function StudentLayout({
                 key={item.name}
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-800/80 text-xs font-semibold text-slate-200 hover:bg-brand-600 hover:text-white transition-colors"
+                className="flex items-center gap-2 p-2.5 sm:p-3 rounded-xl bg-slate-800/80 text-[11px] sm:text-xs font-semibold text-slate-200 hover:bg-brand-600 hover:text-white transition-colors"
               >
                 <item.icon className="w-4 h-4 text-brand-400" />
                 <span>{item.name}</span>
@@ -199,7 +199,7 @@ export default function StudentLayout({
       )}
 
       {/* Main Content Body */}
-      <main className="flex-1 lg:ml-64 p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8 max-w-7xl mx-auto w-full overflow-x-hidden">
+      <main className="flex-1 lg:ml-64 p-3 sm:p-6 lg:p-8 pb-20 lg:pb-8 max-w-7xl mx-auto w-full min-w-0">
         {children}
       </main>
 

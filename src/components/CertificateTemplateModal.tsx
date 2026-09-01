@@ -105,7 +105,7 @@ export default function CertificateTemplateModal({
           </p>
 
           {/* Footer Grid */}
-          <div className="pt-8 grid grid-cols-3 items-end gap-4 text-xs font-serif text-slate-700">
+          <div className="pt-8 grid grid-cols-1 sm:grid-cols-3 items-end gap-4 text-xs font-serif text-slate-700">
             <div className="text-left space-y-1">
               <p className="font-bold text-slate-900">Date of Issue:</p>
               <p className="font-mono text-slate-600">{issueDateStr}</p>

@@ -566,7 +566,7 @@ export default function SettingsClient({
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">City</label>
                   <input
@@ -608,14 +608,18 @@ export default function SettingsClient({
             </form>
           )}
 
-          {/* TAB 2: USERS & ROLES */}
+          {/* TAB 2: USERS */}
           {activeTab === "users" && (
-            <div className="space-y-6 text-xs">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                  <Users className="w-5 h-5 text-brand-600" /> Users & Access Control
-                </h3>
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                    <Users className="w-5 h-5 text-brand-600" /> User Accounts & Staff Roles
+                  </h3>
+                  <p className="text-slate-500 text-xs mt-0.5">Manage administrative and staff access levels</p>
+                </div>
                 <button
+                  type="button"
                   onClick={() => setShowCreateUserModal(true)}
                   className="px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-xs flex items-center gap-1.5"
                 >
@@ -624,7 +628,7 @@ export default function SettingsClient({
               </div>
 
               {/* Users Roster Table */}
-              <div className="border border-slate-200/80 rounded-2xl overflow-hidden">
+              <div className="border border-slate-200/80 rounded-2xl overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
                     <tr>
@@ -701,7 +705,7 @@ export default function SettingsClient({
                     </button>
                   </div>
 
-                  <div className="border border-slate-200/80 rounded-2xl overflow-hidden">
+                  <div className="border border-slate-200/80 rounded-2xl overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase">
                         <tr>
@@ -878,7 +882,7 @@ export default function SettingsClient({
 
               <div className="pt-3 border-t border-slate-100 space-y-3">
                 <h4 className="font-bold text-slate-900 text-sm">Student ID Generation Format</h4>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block font-bold text-slate-700 mb-1">ID Prefix</label>
                     <input
@@ -925,7 +929,7 @@ export default function SettingsClient({
                 </h3>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Passing Percentage (%) *</label>
                   <input
@@ -934,8 +938,20 @@ export default function SettingsClient({
                     required
                     value={passingPct}
                     onChange={(e) => setPassingPct(parseFloat(e.target.value))}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800 font-bold"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800 font-mono"
                   />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Grading Scale System</label>
+                  <select
+                    value={gradeSystem}
+                    onChange={(e) => setGradeSystem(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800"
+                  >
+                    <option value="A+,A,B+,B,C,D,F">Letter Grade (A+, A, B+, B, C, D, F)</option>
+                    <option value="PERCENTAGE">Percentage (%) Only</option>
+                  </select>
                 </div>
 
                 <div>
@@ -1046,7 +1062,7 @@ export default function SettingsClient({
                 </h3>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Default Currency Symbol / Code *</label>
                   <input
@@ -1240,7 +1256,7 @@ export default function SettingsClient({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Email Address *</label>
                   <input

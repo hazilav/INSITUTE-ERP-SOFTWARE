@@ -660,7 +660,7 @@ export default function ActivityDetailPage({ params }: { params: { id: string } 
             )}
 
             <form onSubmit={handleReviewSave} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
                     Obtained Marks (Max: {activity.maximum_marks})

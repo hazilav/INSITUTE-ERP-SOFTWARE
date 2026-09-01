@@ -1080,7 +1080,7 @@ export default function StudentProfileClient({
                 ⚠️ Store or share these credentials safely. The student will be prompted to change their password on first login.
               </p>
 
-              <div className="grid grid-cols-2 gap-2 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
                 <button
                   onClick={() => handleCopyLoginDetails(tempCredentials)}
                   className="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"

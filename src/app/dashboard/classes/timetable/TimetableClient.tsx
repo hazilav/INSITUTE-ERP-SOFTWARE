@@ -594,7 +594,7 @@ export default function TimetableClient({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Course *</label>
                   <select
@@ -625,7 +625,7 @@ export default function TimetableClient({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Mentor</label>
                   <select
@@ -654,7 +654,7 @@ export default function TimetableClient({
               </div>
 
               {/* Date & Time */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Date *</label>
                   <input
@@ -711,7 +711,7 @@ export default function TimetableClient({
               {/* Online / Hybrid Fields */}
               {(classType === "live_online" || classType === "hybrid") && (
                 <div className="p-3 rounded-2xl bg-purple-50/60 border border-purple-200 space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block font-bold text-purple-900 mb-1">Platform</label>
                       <select
@@ -753,7 +753,7 @@ export default function TimetableClient({
 
                 {isRecurring && (
                   <div className="pt-2 border-t border-indigo-200/60 space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block font-bold text-slate-700 mb-1">Frequency</label>
                         <select
@@ -892,7 +892,7 @@ export default function TimetableClient({
                   className="w-full p-2.5 rounded-xl border border-slate-200"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">New Start Time *</label>
                   <input

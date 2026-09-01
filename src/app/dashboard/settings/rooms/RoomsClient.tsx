@@ -229,7 +229,7 @@ export default function RoomsClient({ instituteName }: RoomsClientProps) {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Room Number *</label>
                   <input
