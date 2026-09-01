@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Modal from "@/components/Modal";
 import Link from "next/link";
 import {
   Calendar as CalendarIcon,
@@ -548,258 +549,255 @@ export default function TimetableClient({
         )}
       </div>
 
-      {/* + Schedule Class Modal */}
-      {showScheduleModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-xl my-8">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                <CalendarIcon className="w-5 h-5 text-brand-600" /> Schedule Class
-              </h3>
-              <button onClick={() => setShowScheduleModal(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
+      <Modal
+          isOpen={showScheduleModal}
+          onClose={() => setShowScheduleModal(false)}
+          title="Schedule Class"
+          subtitle="Configure class timetable, assigned mentor, and room"
+          icon={<CalendarIcon className="w-5 h-5 text-brand-600" />}
+          maxWidth="2xl"
+          footer={
+            <div className="flex flex-col-reverse sm:flex-row gap-2.5 sm:gap-3 w-full">
+              <button
+                type="button"
+                onClick={() => setShowScheduleModal(false)}
+                className="w-full sm:w-auto flex-1 py-2 px-4 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 font-bold text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleScheduleSubmit}
+                disabled={submitting}
+                className="w-full sm:w-auto flex-[2] py-2 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs disabled:opacity-50"
+              >
+                {submitting ? "Checking Conflicts..." : "Schedule Class"}
               </button>
             </div>
+          }
+        >
+          {formErrors.length > 0 && (
+            <div className="p-3 rounded-2xl bg-rose-50 text-rose-800 border border-rose-200 text-xs space-y-1">
+              {formErrors.map((err, i) => (
+                <p key={i} className="font-bold flex items-center gap-1.5">
+                  ⚠️ {err}
+                </p>
+              ))}
+            </div>
+          )}
 
-            {formErrors.length > 0 && (
-              <div className="p-3.5 rounded-2xl bg-rose-50 text-rose-800 border border-rose-200 text-xs space-y-1">
-                {formErrors.map((err, i) => (
-                  <p key={i} className="font-bold flex items-center gap-1.5">
-                    ⚠️ {err}
-                  </p>
-                ))}
-              </div>
-            )}
+          {formWarnings.length > 0 && (
+            <div className="p-3 rounded-2xl bg-amber-50 text-amber-800 border border-amber-200 text-xs space-y-1">
+              {formWarnings.map((warn, i) => (
+                <p key={i} className="font-bold flex items-center gap-1.5">
+                  💡 {warn}
+                </p>
+              ))}
+            </div>
+          )}
 
-            {formWarnings.length > 0 && (
-              <div className="p-3.5 rounded-2xl bg-amber-50 text-amber-800 border border-amber-200 text-xs space-y-1">
-                {formWarnings.map((warn, i) => (
-                  <p key={i} className="font-bold flex items-center gap-1.5">
-                    💡 {warn}
-                  </p>
-                ))}
-              </div>
-            )}
+          <form onSubmit={handleScheduleSubmit} className="space-y-4 text-xs">
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Class Title *</label>
+              <input
+                type="text"
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Digital Marketing Strategy"
+                className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800 focus:outline-none"
+              />
+            </div>
 
-            <form onSubmit={handleScheduleSubmit} className="space-y-4 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Class Title *</label>
-                <input
-                  type="text"
+                <label className="block font-bold text-slate-700 mb-1">Course *</label>
+                <select
                   required
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Digital Marketing Strategy"
+                  value={courseId}
+                  onChange={(e) => setCourseId(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none"
+                >
+                  <option value="">Select Course</option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Batch *</label>
+                <select
+                  required
+                  value={batchId}
+                  onChange={(e) => setBatchId(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none"
+                >
+                  <option value="">Select Batch</option>
+                  {batches.map((b) => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Mentor</label>
+                <select
+                  value={mentorId}
+                  onChange={(e) => setMentorId(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none"
+                >
+                  <option value="">Unassigned</option>
+                  {mentors.map((m) => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Class Type *</label>
+                <select
+                  value={classType}
+                  onChange={(e) => setClassType(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none font-bold"
+                >
+                  <option value="physical">Offline Classroom</option>
+                  <option value="live_online">Live Online</option>
+                  <option value="hybrid">Hybrid (Offline + Online)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Date & Time */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Date *</label>
+                <input
+                  type="date"
+                  required
+                  value={classDate}
+                  onChange={(e) => setClassDate(e.target.value)}
                   className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800 focus:outline-none"
                 />
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Course *</label>
-                  <select
-                    required
-                    value={courseId}
-                    onChange={(e) => setCourseId(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none"
-                  >
-                    <option value="">Select Course</option>
-                    {courses.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Batch *</label>
-                  <select
-                    required
-                    value={batchId}
-                    onChange={(e) => setBatchId(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none"
-                  >
-                    <option value="">Select Batch</option>
-                    {batches.map((b) => (
-                      <option key={b.id} value={b.id}>{b.name}</option>
-                    ))}
-                  </select>
-                </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Start Time *</label>
+                <input
+                  type="text"
+                  required
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  placeholder="10:00 AM"
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-mono text-slate-800 focus:outline-none"
+                />
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Mentor</label>
-                  <select
-                    value={mentorId}
-                    onChange={(e) => setMentorId(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none"
-                  >
-                    <option value="">Unassigned</option>
-                    {mentors.map((m) => (
-                      <option key={m.id} value={m.id}>{m.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Class Type *</label>
-                  <select
-                    value={classType}
-                    onChange={(e) => setClassType(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none font-bold"
-                  >
-                    <option value="physical">Offline Classroom</option>
-                    <option value="live_online">Live Online</option>
-                    <option value="hybrid">Hybrid (Offline + Online)</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">End Time *</label>
+                <input
+                  type="text"
+                  required
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  placeholder="11:30 AM"
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-mono text-slate-800 focus:outline-none"
+                />
               </div>
+            </div>
 
-              {/* Date & Time */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Physical / Hybrid Fields */}
+            {(classType === "physical" || classType === "hybrid") && (
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Date *</label>
-                  <input
-                    type="date"
-                    required
-                    value={classDate}
-                    onChange={(e) => setClassDate(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Start Time *</label>
-                  <input
-                    type="text"
-                    required
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    placeholder="10:00 AM"
-                    className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800 focus:outline-none font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">End Time *</label>
-                  <input
-                    type="text"
-                    required
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    placeholder="11:00 AM"
-                    className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800 focus:outline-none font-mono"
-                  />
-                </div>
-              </div>
-
-              {/* Offline / Hybrid Fields */}
-              {(classType === "physical" || classType === "hybrid") && (
-                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                  <label className="block font-bold text-slate-700">Select Room</label>
+                  <label className="block font-bold text-slate-700 mb-1">Assigned Classroom / Room</label>
                   <select
                     value={roomId}
                     onChange={(e) => setRoomId(e.target.value)}
                     className="w-full p-2 rounded-xl border border-slate-200 bg-white font-medium"
                   >
-                    <option value="">No Room Specified</option>
+                    <option value="">Select Room (Optional)</option>
                     {rooms.map((r) => (
                       <option key={r.id} value={r.id}>
-                        {r.name} ({r.room_number}) — Capacity: {r.capacity} students
+                        {r.name} ({r.room_number}) — Cap: {r.capacity}
                       </option>
                     ))}
                   </select>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Online / Hybrid Fields */}
-              {(classType === "live_online" || classType === "hybrid") && (
-                <div className="p-3 rounded-2xl bg-purple-50/60 border border-purple-200 space-y-3">
+            {/* Online / Hybrid Fields */}
+            {(classType === "live_online" || classType === "hybrid") && (
+              <div className="p-3 rounded-2xl bg-purple-50/60 border border-purple-200 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-purple-900 mb-1">Platform</label>
+                    <select
+                      value={meetingPlatform}
+                      onChange={(e) => setMeetingPlatform(e.target.value)}
+                      className="w-full p-2 rounded-xl border border-purple-200 bg-white font-medium"
+                    >
+                      <option value="Zoom">Zoom</option>
+                      <option value="Google Meet">Google Meet</option>
+                      <option value="Microsoft Teams">Microsoft Teams</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-bold text-purple-900 mb-1">Meeting URL</label>
+                    <input
+                      type="url"
+                      value={meetingUrl}
+                      onChange={(e) => setMeetingUrl(e.target.value)}
+                      placeholder="https://zoom.us/j/..."
+                      className="w-full p-2 rounded-xl border border-purple-200 bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Recurrence Toggle */}
+            <div className="p-3 rounded-2xl bg-indigo-50/50 border border-indigo-100 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-indigo-900">Repeat Class Schedule</span>
+                <input
+                  type="checkbox"
+                  checked={isRecurring}
+                  onChange={(e) => setIsRecurring(e.target.checked)}
+                  className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500"
+                />
+              </div>
+
+              {isRecurring && (
+                <div className="pt-2 border-t border-indigo-200/60 space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block font-bold text-purple-900 mb-1">Platform</label>
+                      <label className="block font-bold text-slate-700 mb-1">Frequency</label>
                       <select
-                        value={meetingPlatform}
-                        onChange={(e) => setMeetingPlatform(e.target.value)}
-                        className="w-full p-2 rounded-xl border border-purple-200 bg-white font-medium"
+                        value={recurrenceType}
+                        onChange={(e) => setRecurrenceType(e.target.value)}
+                        className="w-full p-2 rounded-xl border border-slate-200 bg-white font-bold"
                       >
-                        <option value="Zoom">Zoom</option>
-                        <option value="Google Meet">Google Meet</option>
-                        <option value="Microsoft Teams">Microsoft Teams</option>
-                        <option value="Other">Other</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly (Every week)</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block font-bold text-purple-900 mb-1">Meeting URL</label>
+                      <label className="block font-bold text-slate-700 mb-1">End Date *</label>
                       <input
-                        type="url"
-                        value={meetingUrl}
-                        onChange={(e) => setMeetingUrl(e.target.value)}
-                        placeholder="https://zoom.us/j/..."
-                        className="w-full p-2 rounded-xl border border-purple-200 bg-white"
+                        type="date"
+                        required
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="w-full p-2 rounded-xl border border-slate-200 bg-white"
                       />
                     </div>
                   </div>
                 </div>
               )}
-
-              {/* Recurrence Toggle */}
-              <div className="p-3 rounded-2xl bg-indigo-50/50 border border-indigo-100 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-indigo-900">Repeat Class Schedule</span>
-                  <input
-                    type="checkbox"
-                    checked={isRecurring}
-                    onChange={(e) => setIsRecurring(e.target.checked)}
-                    className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500"
-                  />
-                </div>
-
-                {isRecurring && (
-                  <div className="pt-2 border-t border-indigo-200/60 space-y-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1">Frequency</label>
-                        <select
-                          value={recurrenceType}
-                          onChange={(e) => setRecurrenceType(e.target.value)}
-                          className="w-full p-2 rounded-xl border border-slate-200 bg-white font-medium"
-                        >
-                          <option value="daily">Daily</option>
-                          <option value="weekly">Weekly</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1">End Date *</label>
-                        <input
-                          type="date"
-                          required
-                          value={endDate}
-                          onChange={(e) => setEndDate(e.target.value)}
-                          className="w-full p-2 rounded-xl border border-slate-200 bg-white"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowScheduleModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold disabled:opacity-50"
-                >
-                  {submitting ? "Checking Conflicts..." : "Schedule Class"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </div>
+          </form>
+        </Modal>
 
       {/* Class Details Modal */}
       {selectedClass && (
@@ -872,106 +870,120 @@ export default function TimetableClient({
       )}
 
       {/* Reschedule Modal */}
-      {showRescheduleModal && selectedClass && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl">
-            <h3 className="font-bold text-slate-900 text-base">Reschedule Class</h3>
+      <Modal
+        isOpen={showRescheduleModal && !!selectedClass}
+        onClose={() => setShowRescheduleModal(false)}
+        title="Reschedule Class"
+        subtitle={`Update date and time for ${selectedClass?.title}`}
+        icon={<Clock className="w-5 h-5 text-amber-600" />}
+        maxWidth="md"
+        footer={
+          <div className="flex flex-col-reverse sm:flex-row gap-2.5 sm:gap-3 w-full">
+            <button
+              type="button"
+              onClick={() => setShowRescheduleModal(false)}
+              className="w-full sm:w-auto flex-1 py-2 px-4 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 font-bold text-xs"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleRescheduleSubmit}
+              disabled={submitting}
+              className="w-full sm:w-auto flex-[2] py-2 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs disabled:opacity-50"
+            >
+              {submitting ? "Saving..." : "Confirm Reschedule"}
+            </button>
+          </div>
+        }
+      >
+        {selectedClass && (
+          <form onSubmit={handleRescheduleSubmit} className="space-y-3 text-xs">
             {formErrors.length > 0 && (
               <div className="p-3 rounded-xl bg-rose-50 text-rose-800 text-xs font-bold">
                 {formErrors.join(", ")}
               </div>
             )}
-            <form onSubmit={handleRescheduleSubmit} className="space-y-3 text-xs">
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">New Date *</label>
+              <input
+                type="date"
+                required
+                value={rescheduleDate}
+                onChange={(e) => setRescheduleDate(e.target.value)}
+                className="w-full p-2.5 rounded-xl border border-slate-200"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">New Date *</label>
+                <label className="block font-bold text-slate-700 mb-1">New Start Time *</label>
                 <input
-                  type="date"
+                  type="text"
                   required
-                  value={rescheduleDate}
-                  onChange={(e) => setRescheduleDate(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200"
+                  value={rescheduleStartTime}
+                  onChange={(e) => setRescheduleStartTime(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-mono"
                 />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">New Start Time *</label>
-                  <input
-                    type="text"
-                    required
-                    value={rescheduleStartTime}
-                    onChange={(e) => setRescheduleStartTime(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">New End Time *</label>
-                  <input
-                    type="text"
-                    required
-                    value={rescheduleEndTime}
-                    onChange={(e) => setRescheduleEndTime(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 font-mono"
-                  />
-                </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">New End Time *</label>
+                <input
+                  type="text"
+                  required
+                  value={rescheduleEndTime}
+                  onChange={(e) => setRescheduleEndTime(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-mono"
+                />
               </div>
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowRescheduleModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold"
-                >
-                  {submitting ? "Saving..." : "Confirm Reschedule"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </div>
+          </form>
+        )}
+      </Modal>
 
       {/* Cancel Class Modal */}
-      {showCancelModal && selectedClass && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl">
-            <h3 className="font-bold text-slate-900 text-base">Cancel Class</h3>
+      <Modal
+        isOpen={showCancelModal && !!selectedClass}
+        onClose={() => setShowCancelModal(false)}
+        title="Cancel Class"
+        subtitle={`Cancel class session for ${selectedClass?.title}`}
+        icon={<XCircle className="w-5 h-5 text-rose-600" />}
+        maxWidth="md"
+        footer={
+          <div className="flex flex-col-reverse sm:flex-row gap-2.5 sm:gap-3 w-full">
+            <button
+              type="button"
+              onClick={() => setShowCancelModal(false)}
+              className="w-full sm:w-auto flex-1 py-2 px-4 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 font-bold text-xs"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={handleCancelSubmit}
+              disabled={submitting}
+              className="w-full sm:w-auto flex-[2] py-2 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs disabled:opacity-50"
+            >
+              {submitting ? "Cancelling..." : "Confirm Cancellation"}
+            </button>
+          </div>
+        }
+      >
+        {selectedClass && (
+          <form onSubmit={handleCancelSubmit} className="space-y-3 text-xs">
             <p className="text-xs text-slate-500">
               Please state a cancellation reason (will be logged in history and notified to students):
             </p>
-            <form onSubmit={handleCancelSubmit} className="space-y-3 text-xs">
-              <textarea
-                rows={3}
-                required
-                value={cancellationReason}
-                onChange={(e) => setCancellationReason(e.target.value)}
-                placeholder="e.g. Mentor unavailable"
-                className="w-full p-3 rounded-xl border border-slate-200 text-slate-800"
-              />
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCancelModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold"
-                >
-                  Close
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold"
-                >
-                  {submitting ? "Cancelling..." : "Confirm Cancellation"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <textarea
+              rows={3}
+              required
+              value={cancellationReason}
+              onChange={(e) => setCancellationReason(e.target.value)}
+              placeholder="e.g. Mentor unavailable due to personal emergency"
+              className="w-full p-3 rounded-xl border border-slate-200 text-slate-800"
+            />
+          </form>
+        )}
+      </Modal>
     </div>
   );
 }

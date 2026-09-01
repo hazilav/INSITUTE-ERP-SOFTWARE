@@ -656,7 +656,7 @@ export default function FeesPage() {
         isOpen={recordPaymentModalOpen}
         onClose={() => setRecordPaymentModalOpen(false)}
         onSuccess={fetchData}
-        preselectedFeePlanId={selectedPlanForPayment}
+        preselectedPlanId={selectedPlanForPayment}
       />
 
       <PaymentReceiptModal

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { KeyRound, Copy, Share2, ShieldCheck, Mail, Lock, X, Check } from "lucide-react";
 import { getStaffPortalUrl, sharePortalLink } from "@/lib/urls";
 import Toast from "@/components/Toast";
+import Modal from "@/components/Modal";
 import { formatErrorMessage } from "@/lib/errors";
 
 interface StaffAccountCardClientProps {
@@ -153,79 +154,73 @@ export default function StaffAccountCardClient({
       </div>
 
       {/* Generated Temporary Credentials Modal */}
-      {tempCredentials && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                <KeyRound className="w-5 h-5 text-amber-600" /> New Temporary Password Issued
-              </h3>
-              <button onClick={() => setTempCredentials(null)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
+      <Modal
+        isOpen={!!tempCredentials}
+        onClose={() => setTempCredentials(null)}
+        title="Temporary Password Issued"
+        subtitle={`Password updated for ${tempCredentials?.staff_name}`}
+        icon={<KeyRound className="w-5 h-5 text-amber-600" />}
+        maxWidth="md"
+        footer={
+          <button
+            type="button"
+            onClick={() => setTempCredentials(null)}
+            className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-colors"
+          >
+            Done
+          </button>
+        }
+      >
+        {tempCredentials && (
+          <div className="space-y-3 text-xs">
+            <div className="p-4 rounded-2xl bg-slate-900 text-white space-y-2.5 font-mono">
+              <div className="flex justify-between border-b border-slate-800 pb-2">
+                <span className="text-slate-400 font-sans">Name:</span>
+                <span className="font-bold text-white">{tempCredentials.staff_name}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-800 pb-2">
+                <span className="text-slate-400 font-sans">Email:</span>
+                <span className="font-bold text-slate-200">{tempCredentials.email}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400 font-sans">Temporary Password:</span>
+                <span className="font-extrabold text-emerald-400 text-sm font-mono">
+                  {tempCredentials.temp_password}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-500">
+              Copy this temporary password now. It will not be shown again after closing this dialog.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+              <button
+                onClick={handleCopyPassword}
+                className="w-full py-2 px-3 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs flex items-center justify-center gap-1 transition-colors"
+              >
+                {copiedType === "pass" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-brand-600" />}
+                {copiedType === "pass" ? "Copied!" : "Copy Password"}
+              </button>
+
+              <button
+                onClick={() => handleCopyCredentials(tempCredentials)}
+                className="w-full py-2 px-3 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs flex items-center justify-center gap-1 transition-colors"
+              >
+                {copiedType === "details" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-brand-600" />}
+                {copiedType === "details" ? "Copied!" : "Copy Details"}
+              </button>
+
+              <button
+                onClick={() => handleShareCredentials(tempCredentials)}
+                className="w-full sm:col-span-2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+              >
+                <Share2 className="w-3.5 h-3.5" /> Share Credentials
               </button>
             </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="p-4 rounded-2xl bg-slate-900 text-white space-y-2.5 font-mono">
-                <div className="flex justify-between border-b border-slate-800 pb-2">
-                  <span className="text-slate-400 font-sans">Name:</span>
-                  <span className="font-bold text-white">{tempCredentials.staff_name}</span>
-                </div>
-                <div className="flex justify-between border-b border-slate-800 pb-2">
-                  <span className="text-slate-400 font-sans">Email:</span>
-                  <span className="font-bold text-slate-200">{tempCredentials.email}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400 font-sans">Temporary Password:</span>
-                  <span className="font-extrabold text-emerald-400 text-sm font-mono">
-                    {tempCredentials.temp_password}
-                  </span>
-                </div>
-              </div>
-
-              <p className="text-[11px] text-slate-500">
-                Copy this temporary password now. It will not be shown again after closing this dialog.
-              </p>
-
-              <div className="flex flex-col gap-2 pt-2">
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleCopyPassword}
-                    className="flex-1 py-2 px-3 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs flex items-center justify-center gap-1 transition-colors"
-                  >
-                    {copiedType === "pass" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-brand-600" />}
-                    {copiedType === "pass" ? "Copied!" : "Copy Password"}
-                  </button>
-
-                  <button
-                    onClick={() => handleCopyCredentials(tempCredentials)}
-                    className="flex-1 py-2 px-3 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs flex items-center justify-center gap-1 transition-colors"
-                  >
-                    {copiedType === "details" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-brand-600" />}
-                    {copiedType === "details" ? "Copied!" : "Copy Login Details"}
-                  </button>
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleShareCredentials(tempCredentials)}
-                    className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
-                  >
-                    <Share2 className="w-3.5 h-3.5" /> Share Login
-                  </button>
-
-                  <button
-                    onClick={() => setTempCredentials(null)}
-                    className="py-2.5 px-5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-colors"
-                  >
-                    Done
-                  </button>
-                </div>
-              </div>
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
     </div>

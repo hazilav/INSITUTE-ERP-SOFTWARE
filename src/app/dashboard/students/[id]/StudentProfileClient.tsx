@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Modal from "@/components/Modal";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -1047,56 +1048,63 @@ export default function StudentProfileClient({
 
       {/* Generated Temporary Credentials Modal */}
       {tempCredentials && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                <KeyRound className="w-5 h-5 text-amber-600" /> Student Credentials Generated
-              </h3>
-              <button onClick={() => setTempCredentials(null)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
+      <Modal
+        isOpen={!!tempCredentials}
+        onClose={() => setTempCredentials(null)}
+        title="Student Credentials Generated"
+        subtitle={`Login access generated for ${student.name}`}
+        icon={<KeyRound className="w-5 h-5 text-amber-600" />}
+        maxWidth="md"
+        footer={
+          <button
+            type="button"
+            onClick={() => setTempCredentials(null)}
+            className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-colors"
+          >
+            Done
+          </button>
+        }
+      >
+        {tempCredentials && (
+          <div className="space-y-3 text-xs">
+            <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-2 font-mono text-slate-800">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-sans">Student ID:</span>
+                <span className="font-extrabold text-amber-900">{tempCredentials.student_id}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-sans">Temporary Password:</span>
+                <span className="font-extrabold text-brand-600 text-sm bg-white px-2 py-0.5 rounded border border-amber-300">
+                  {tempCredentials.temp_password}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-sans">Portal Link:</span>
+                <span className="text-[10px] text-slate-600 truncate max-w-[180px]">{tempCredentials.portal_url}</span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-500">
+              ⚠️ Store or share these credentials safely. The student will be prompted to change their password on first login.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+              <button
+                onClick={() => handleCopyLoginDetails(tempCredentials)}
+                className="w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+              >
+                <Copy className="w-4 h-4" /> Copy Details
+              </button>
+              <button
+                onClick={() => handleShareWhatsApp(tempCredentials)}
+                className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+              >
+                <Send className="w-4 h-4" /> Share WhatsApp
               </button>
             </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-2 font-mono text-slate-800">
-                <div className="flex justify-between">
-                  <span className="text-slate-500 font-sans">Student ID:</span>
-                  <span className="font-extrabold text-amber-900">{tempCredentials.student_id}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500 font-sans">Temporary Password:</span>
-                  <span className="font-extrabold text-brand-600 text-sm bg-white px-2 py-0.5 rounded border border-amber-300">
-                    {tempCredentials.temp_password}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500 font-sans">Portal Link:</span>
-                  <span className="text-[10px] text-slate-600 truncate max-w-[180px]">{tempCredentials.portal_url}</span>
-                </div>
-              </div>
-
-              <p className="text-[11px] text-slate-500">
-                ⚠️ Store or share these credentials safely. The student will be prompted to change their password on first login.
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
-                <button
-                  onClick={() => handleCopyLoginDetails(tempCredentials)}
-                  className="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
-                >
-                  <Copy className="w-4 h-4" /> Copy Details
-                </button>
-                <button
-                  onClick={() => handleShareWhatsApp(tempCredentials)}
-                  className="px-3 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
-                >
-                  <Send className="w-4 h-4" /> Share WhatsApp
-                </button>
-              </div>
-            </div>
           </div>
-        </div>
+        )}
+      </Modal>
       )}
 
       {/* Toast Notification */}

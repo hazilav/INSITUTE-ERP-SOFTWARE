@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Modal from "@/components/Modal";
 import {
   Building2,
   Users,
@@ -1232,97 +1233,93 @@ export default function SettingsClient({
       </div>
 
       {/* Create User Modal */}
-      {showCreateUserModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                <Users className="w-5 h-5 text-brand-600" /> Create Staff / Mentor Account
-              </h3>
-              <button onClick={() => setShowCreateUserModal(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateUser} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Full Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={newUserName}
-                  onChange={(e) => setNewUserName(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Email Address *</label>
-                  <input
-                    type="email"
-                    required
-                    value={newUserEmail}
-                    onChange={(e) => setNewUserEmail(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Phone Number</label>
-                  <input
-                    type="text"
-                    value={newUserPhone}
-                    onChange={(e) => setNewUserPhone(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Role *</label>
-                <select
-                  value={newUserRole}
-                  onChange={(e) => setNewUserRole(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 font-bold"
-                >
-                  <option value="STAFF">STAFF</option>
-                  <option value="ADMIN">ADMIN</option>
-                  <option value="MENTOR">MENTOR</option>
-                </select>
-                <p className="text-[10px] text-slate-400 mt-1">Secondary Owner creation is blocked.</p>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Password *</label>
-                <input
-                  type="password"
-                  required
-                  value={newUserPassword}
-                  onChange={(e) => setNewUserPassword(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateUserModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold disabled:opacity-50"
-                >
-                  {saving ? "Creating..." : "Create Account"}
-                </button>
-              </div>
-            </form>
+      <Modal
+        isOpen={showCreateUserModal}
+        onClose={() => setShowCreateUserModal(false)}
+        title="Create Staff / Mentor Account"
+        subtitle="Create staff member login credentials"
+        icon={<Users className="w-5 h-5 text-brand-600" />}
+        maxWidth="md"
+        footer={
+          <div className="flex flex-col-reverse sm:flex-row gap-2.5 sm:gap-3 w-full">
+            <button
+              type="button"
+              onClick={() => setShowCreateUserModal(false)}
+              className="w-full sm:w-auto flex-1 py-2 px-4 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 font-bold text-xs"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleCreateUser}
+              disabled={saving}
+              className="w-full sm:w-auto flex-[2] py-2 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs disabled:opacity-50"
+            >
+              {saving ? "Creating..." : "Create Account"}
+            </button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <form onSubmit={handleCreateUser} className="space-y-3 text-xs">
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Full Name *</label>
+            <input
+              type="text"
+              required
+              value={newUserName}
+              onChange={(e) => setNewUserName(e.target.value)}
+              className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Email Address *</label>
+              <input
+                type="email"
+                required
+                value={newUserEmail}
+                onChange={(e) => setNewUserEmail(e.target.value)}
+                className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Phone Number</label>
+              <input
+                type="text"
+                value={newUserPhone}
+                onChange={(e) => setNewUserPhone(e.target.value)}
+                className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800 font-mono"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Role *</label>
+            <select
+              value={newUserRole}
+              onChange={(e) => setNewUserRole(e.target.value)}
+              className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 font-bold"
+            >
+              <option value="STAFF">STAFF</option>
+              <option value="ADMIN">ADMIN</option>
+              <option value="MENTOR">MENTOR</option>
+            </select>
+            <p className="text-[10px] text-slate-400 mt-1">Secondary Owner creation is blocked.</p>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Password *</label>
+            <input
+              type="password"
+              required
+              value={newUserPassword}
+              onChange={(e) => setNewUserPassword(e.target.value)}
+              className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800"
+            />
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

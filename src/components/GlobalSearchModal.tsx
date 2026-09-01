@@ -63,6 +63,16 @@ export default function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModal
     return () => clearTimeout(timer);
   }, [query]);
 
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const totalResults =
@@ -75,8 +85,8 @@ export default function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModal
     results.certificates.length;
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-start justify-center p-4 pt-16 sm:pt-24">
-      <div className="bg-white rounded-3xl max-w-2xl w-full border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-start justify-center p-3 pt-12 sm:pt-24">
+      <div className="bg-white rounded-3xl w-[calc(100vw-24px)] max-w-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[calc(100vh-48px)]">
         {/* Search Input Bar */}
         <div className="p-4 border-b border-slate-100 flex items-center gap-3">
           <Search className="w-5 h-5 text-brand-600 shrink-0" />
