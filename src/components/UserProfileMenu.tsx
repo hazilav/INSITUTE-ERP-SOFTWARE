@@ -87,38 +87,45 @@ export default function UserProfileMenu({ user, institute }: UserProfileMenuProp
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-          <div className="px-4 py-3 border-b border-slate-100">
-            <p className="text-sm font-bold text-slate-900">{user.name}</p>
-            <p className="text-xs text-slate-500 truncate">{user.email}</p>
-            
-            <div className="flex items-center gap-2 mt-2.5">
-              <span className={`px-2 py-0.5 text-xs font-semibold rounded-md border ${getRoleBadgeStyle(user.role)}`}>
-                {user.role}
-              </span>
-              <span className="text-xs text-slate-400 flex items-center gap-1 truncate">
-                <Building2 className="w-3.5 h-3.5" /> {institute.name}
-              </span>
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-xs sm:hidden"
+            onClick={() => setIsOpen(false)}
+          />
+
+          <div className="fixed top-16 left-3 right-3 sm:absolute sm:top-auto sm:left-auto sm:right-0 sm:mt-2 sm:w-72 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150 max-h-[85vh] overflow-y-auto">
+            <div className="px-4 py-3 border-b border-slate-100">
+              <p className="text-sm font-bold text-slate-900">{user.name}</p>
+              <p className="text-xs text-slate-500 truncate">{user.email}</p>
+              
+              <div className="flex items-center gap-2 mt-2.5">
+                <span className={`px-2 py-0.5 text-xs font-semibold rounded-md border ${getRoleBadgeStyle(user.role)}`}>
+                  {user.role}
+                </span>
+                <span className="text-xs text-slate-400 flex items-center gap-1 truncate">
+                  <Building2 className="w-3.5 h-3.5" /> {institute.name}
+                </span>
+              </div>
+            </div>
+
+            <div className="px-2 py-1.5">
+              <div className="px-3 py-2 text-xs text-slate-400 font-medium flex items-center gap-2">
+                <Shield className="w-3.5 h-3.5 text-emerald-500" /> Multi-Tenant Secured
+              </div>
+            </div>
+
+            <div className="border-t border-slate-100 pt-1 px-2">
+              <button
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-colors font-medium disabled:opacity-50"
+              >
+                <LogOut className="w-4 h-4" />
+                {loggingOut ? "Logging out..." : "Logout"}
+              </button>
             </div>
           </div>
-
-          <div className="px-2 py-1.5">
-            <div className="px-3 py-2 text-xs text-slate-400 font-medium flex items-center gap-2">
-              <Shield className="w-3.5 h-3.5 text-emerald-500" /> Multi-Tenant Secured
-            </div>
-          </div>
-
-          <div className="border-t border-slate-100 pt-1 px-2">
-            <button
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-colors font-medium disabled:opacity-50"
-            >
-              <LogOut className="w-4 h-4" />
-              {loggingOut ? "Logging out..." : "Logout"}
-            </button>
-          </div>
-        </div>
+        </>
       )}
     </div>
   );

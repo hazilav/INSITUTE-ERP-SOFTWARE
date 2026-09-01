@@ -11,6 +11,7 @@ import {
   BadgeDollarSign,
   CheckSquare,
   ChevronDown,
+  X,
 } from "lucide-react";
 import AddStudentModal from "./AddStudentModal";
 
@@ -46,7 +47,7 @@ export default function QuickAddDropdown() {
         <button
           type="button"
           onClick={() => setOpen(!open)}
-          className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-md shadow-brand-600/30 flex items-center gap-1 sm:gap-1.5 transition-all"
+          className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-md shadow-brand-600/30 flex items-center gap-1 sm:gap-1.5 transition-all shrink-0"
         >
           <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           <span>Add</span>
@@ -54,37 +55,56 @@ export default function QuickAddDropdown() {
         </button>
 
         {open && (
-          <div className="absolute right-0 mt-2 w-52 rounded-2xl bg-white border border-slate-200/90 shadow-2xl z-50 p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150">
-            {options.map((opt) => {
-              const Icon = opt.icon;
-              if (opt.action) {
+          <>
+            {/* Backdrop on mobile */}
+            <div
+              className="fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-xs sm:hidden"
+              onClick={() => setOpen(false)}
+            />
+
+            <div className="fixed top-16 left-3 right-3 sm:absolute sm:top-auto sm:left-auto sm:right-0 sm:mt-2 sm:w-56 rounded-2xl bg-white border border-slate-200/90 shadow-2xl z-50 p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150 max-h-[80vh] overflow-y-auto">
+              <div className="sm:hidden px-3 py-2 border-b border-slate-100 mb-1 flex items-center justify-between">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Quick Actions</span>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="p-1 text-slate-400 hover:text-slate-700 rounded-lg"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {options.map((opt) => {
+                const Icon = opt.icon;
+                if (opt.action) {
+                  return (
+                    <button
+                      key={opt.label}
+                      onClick={() => {
+                        setOpen(false);
+                        opt.action();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 sm:py-2 rounded-xl hover:bg-slate-50 text-slate-800 text-xs font-bold transition-colors text-left"
+                    >
+                      <Icon className={`w-4 h-4 ${opt.color}`} />
+                      <span>{opt.label}</span>
+                    </button>
+                  );
+                }
                 return (
-                  <button
+                  <a
                     key={opt.label}
-                    onClick={() => {
-                      setOpen(false);
-                      opt.action();
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-50 text-slate-800 text-xs font-bold transition-colors text-left"
+                    href={opt.href}
+                    onClick={() => setOpen(false)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 sm:py-2 rounded-xl hover:bg-slate-50 text-slate-800 text-xs font-bold transition-colors text-left"
                   >
                     <Icon className={`w-4 h-4 ${opt.color}`} />
                     <span>{opt.label}</span>
-                  </button>
+                  </a>
                 );
-              }
-              return (
-                <a
-                  key={opt.label}
-                  href={opt.href}
-                  onClick={() => setOpen(false)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-50 text-slate-800 text-xs font-bold transition-colors text-left"
-                >
-                  <Icon className={`w-4 h-4 ${opt.color}`} />
-                  <span>{opt.label}</span>
-                </a>
-              );
-            })}
-          </div>
+              })}
+            </div>
+          </>
         )}
       </div>
 

@@ -107,87 +107,94 @@ export default function NotificationBell({ isStudent = false }: NotificationBell
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-          <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-slate-900 dark:text-white text-sm">Notifications</span>
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-xs sm:hidden"
+            onClick={() => setOpen(false)}
+          />
+
+          <div className="fixed top-16 left-3 right-3 sm:absolute sm:top-auto sm:left-auto sm:right-0 sm:mt-2 sm:w-96 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150 max-h-[85vh] flex flex-col">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-900 dark:text-white text-sm">Notifications</span>
+                {unreadCount > 0 && (
+                  <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-brand-100 text-brand-700 dark:bg-brand-950 dark:text-brand-300">
+                    {unreadCount} new
+                  </span>
+                )}
+              </div>
+
               {unreadCount > 0 && (
-                <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-brand-100 text-brand-700 dark:bg-brand-950 dark:text-brand-300">
-                  {unreadCount} new
-                </span>
+                <button
+                  onClick={handleMarkAllRead}
+                  disabled={loading}
+                  className="text-xs text-brand-600 dark:text-brand-400 hover:underline font-semibold flex items-center gap-1"
+                >
+                  <Check className="w-3.5 h-3.5" /> Mark all read
+                </button>
               )}
             </div>
 
-            {unreadCount > 0 && (
-              <button
-                onClick={handleMarkAllRead}
-                disabled={loading}
-                className="text-xs text-brand-600 dark:text-brand-400 hover:underline font-semibold flex items-center gap-1"
-              >
-                <Check className="w-3.5 h-3.5" /> Mark all read
-              </button>
-            )}
-          </div>
-
-          <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
-            {notifications.length > 0 ? (
-              notifications.map((n) => (
-                <div
-                  key={n.id}
-                  onClick={() => {
-                    if (!n.is_read) handleMarkAsRead(n.id);
-                  }}
-                  className={`p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer flex gap-3 ${
-                    !n.is_read ? "bg-brand-50/40 dark:bg-brand-950/20" : ""
-                  }`}
-                >
-                  <div className="pt-0.5">
-                    {!n.is_read ? (
-                      <span className="w-2.5 h-2.5 rounded-full bg-brand-600 block mt-1" />
-                    ) : (
-                      <span className="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-700 block mt-1" />
-                    )}
-                  </div>
-
-                  <div className="space-y-1 flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900 dark:text-slate-100 text-xs">{n.title}</span>
-                      <span className="text-[10px] font-mono text-slate-400">
-                        {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
+            <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 flex-1">
+              {notifications.length > 0 ? (
+                notifications.map((n) => (
+                  <div
+                    key={n.id}
+                    onClick={() => {
+                      if (!n.is_read) handleMarkAsRead(n.id);
+                    }}
+                    className={`p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer flex gap-3 ${
+                      !n.is_read ? "bg-brand-50/40 dark:bg-brand-950/20" : ""
+                    }`}
+                  >
+                    <div className="pt-0.5">
+                      {!n.is_read ? (
+                        <span className="w-2.5 h-2.5 rounded-full bg-brand-600 block mt-1" />
+                      ) : (
+                        <span className="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-700 block mt-1" />
+                      )}
                     </div>
 
-                    <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">{n.message}</p>
+                    <div className="space-y-1 flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-900 dark:text-slate-100 text-xs">{n.title}</span>
+                        <span className="text-[10px] font-mono text-slate-400">
+                          {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
 
-                    {n.action_url && (
-                      <Link
-                        href={n.action_url}
-                        onClick={() => setOpen(false)}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:underline pt-1"
-                      >
-                        View Details <ExternalLink className="w-3 h-3" />
-                      </Link>
-                    )}
+                      <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">{n.message}</p>
+
+                      {n.action_url && (
+                        <Link
+                          href={n.action_url}
+                          onClick={() => setOpen(false)}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:underline pt-1"
+                        >
+                          View Details <ExternalLink className="w-3 h-3" />
+                        </Link>
+                      )}
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="p-8 text-center text-xs text-slate-400">
+                  No notifications right now.
                 </div>
-              ))
-            ) : (
-              <div className="p-8 text-center text-xs text-slate-400">
-                No notifications right now.
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 text-center">
-            <Link
-              href={targetAllUrl}
-              onClick={() => setOpen(false)}
-              className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline"
-            >
-              View Notification Center &rarr;
-            </Link>
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 text-center shrink-0">
+              <Link
+                href={targetAllUrl}
+                onClick={() => setOpen(false)}
+                className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline"
+              >
+                View Notification Center &rarr;
+              </Link>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
