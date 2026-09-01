@@ -5,6 +5,7 @@ import { Menu, Search, Building2 } from "lucide-react";
 import UserProfileMenu from "./UserProfileMenu";
 import NotificationBell from "./NotificationBell";
 import GlobalSearchModal from "./GlobalSearchModal";
+import QuickAddDropdown from "./QuickAddDropdown";
 
 interface TopNavProps {
   user: {
@@ -56,7 +57,8 @@ export default function TopNav({ user, institute, onOpenSidebar }: TopNavProps) 
         </div>
 
         {/* Right section */}
-        <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          <QuickAddDropdown />
           <NotificationBell isStudent={false} />
 
           <div className="hidden sm:block h-6 w-[1px] bg-slate-200" />
