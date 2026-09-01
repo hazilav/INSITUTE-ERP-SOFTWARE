@@ -16,8 +16,15 @@ import {
   Mail,
   UserX,
   Sparkles,
+  Copy,
+  Share2,
+  ExternalLink,
+  Check,
+  KeyRound,
 } from "lucide-react";
 import CreateStaffModal from "@/components/CreateStaffModal";
+import Toast from "@/components/Toast";
+import { getStaffPortalUrl, getStudentPortalUrl, sharePortalLink } from "@/lib/urls";
 
 interface StaffItem {
   id: string;
@@ -31,6 +38,11 @@ interface StaffItem {
   role: string;
   status: string;
   joining_date: string;
+  assigned_course_id?: string | null;
+  assigned_batch_id?: string | null;
+  permissions?: string | null;
+  assigned_course?: { name: string } | null;
+  assigned_batch?: { name: string } | null;
   user?: {
     id: string;
     email: string;
@@ -57,6 +69,8 @@ export default function StaffPage() {
     inactive: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Filters State
   const [search, setSearch] = useState("");
@@ -67,6 +81,9 @@ export default function StaffPage() {
   // Modals State
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffItem | null>(null);
+
+  const staffPortalUrl = typeof window !== "undefined" ? `${window.location.origin}/login` : getStaffPortalUrl();
+  const studentPortalUrl = typeof window !== "undefined" ? `${window.location.origin}/student/login` : getStudentPortalUrl();
 
   const fetchStaff = useCallback(async () => {
     setLoading(true);
@@ -95,6 +112,19 @@ export default function StaffPage() {
     fetchStaff();
   }, [fetchStaff]);
 
+  const handleCopy = (text: string, key: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setToastMessage(`${label} copied to clipboard!`);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
+
+  const handleShare = (title: string, text: string, url: string) => {
+    sharePortalLink(title, text, url, () => {
+      setToastMessage(`${title} details copied!`);
+    });
+  };
+
   const handleToggleStatus = async (staff: StaffItem) => {
     const newStatus = staff.status === "Active" ? "Inactive" : "Active";
     try {
@@ -103,7 +133,10 @@ export default function StaffPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
-      if (res.ok) fetchStaff();
+      if (res.ok) {
+        setToastMessage(`Staff account ${newStatus === "Active" ? "activated" : "deactivated"}.`);
+        fetchStaff();
+      }
     } catch (err) {
       console.error("Failed to toggle status", err);
     }
@@ -151,10 +184,10 @@ export default function StaffPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Staff & Mentor Management
+            Staff & Mentor Portal Management
           </h1>
           <p className="text-slate-500 text-sm mt-1">
-            Manage institute employees, assign mentors to courses & batches, and configure role permissions.
+            Create employee accounts, assign mentors to courses & batches, and manage granular staff permissions.
           </p>
         </div>
 
@@ -169,7 +202,102 @@ export default function StaffPage() {
         </button>
       </div>
 
-      {/* Top Metric Summary Cards */}
+      {/* SECTION 11: PORTAL LINKS BANNER */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-5 text-white border border-slate-800 shadow-sm flex flex-col justify-between space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-brand-500/20 text-brand-400 border border-brand-500/30 flex items-center justify-center font-bold">
+                <UserCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-white">Staff Portal Link</h3>
+                <p className="text-[11px] text-slate-400">Daily-work interface for Staff & Mentors</p>
+              </div>
+            </div>
+            <span className="px-2.5 py-0.5 rounded-md bg-brand-500/20 text-brand-300 text-[10px] font-mono font-bold uppercase">
+              Active
+            </span>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 font-mono text-xs text-slate-300 truncate">
+            {staffPortalUrl}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <a
+              href={staffPortalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5" /> Open Portal
+            </a>
+            <button
+              onClick={() => handleCopy(staffPortalUrl, "staff-link", "Staff Portal Link")}
+              className="py-2 px-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+            >
+              {copiedKey === "staff-link" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copiedKey === "staff-link" ? "Copied" : "Copy Link"}</span>
+            </button>
+            <button
+              onClick={() => handleShare("Staff Portal", `Access Institute Staff Portal:\n${staffPortalUrl}`, staffPortalUrl)}
+              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors"
+              title="Share Link"
+            >
+              <Share2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-indigo-950 to-slate-900 rounded-2xl p-5 text-white border border-slate-800 shadow-sm flex flex-col justify-between space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold">
+                <Building2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-white">Student Portal Link</h3>
+                <p className="text-[11px] text-slate-400">Self-service dashboard for enrolled students</p>
+              </div>
+            </div>
+            <span className="px-2.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 text-[10px] font-mono font-bold uppercase">
+              Active
+            </span>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 font-mono text-xs text-slate-300 truncate">
+            {studentPortalUrl}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <a
+              href={studentPortalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5" /> Open Portal
+            </a>
+            <button
+              onClick={() => handleCopy(studentPortalUrl, "student-link", "Student Portal Link")}
+              className="py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+            >
+              {copiedKey === "student-link" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copiedKey === "student-link" ? "Copied" : "Copy Link"}</span>
+            </button>
+            <button
+              onClick={() => handleShare("Student Portal", `Access Student Portal:\n${studentPortalUrl}`, studentPortalUrl)}
+              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors"
+              title="Share Link"
+            >
+              <Share2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Metric Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center justify-between">
           <div>
@@ -213,7 +341,7 @@ export default function StaffPage() {
 
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Inactive / Resigned</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Inactive</p>
             <p className="text-2xl font-extrabold text-rose-600 mt-1 font-mono">{metrics.inactive}</p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
@@ -230,7 +358,7 @@ export default function StaffPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search staff by name, Employee ID, phone, email, or designation..."
+            placeholder="Search staff by name, Staff ID, phone, email, or designation..."
             className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
           />
         </div>
@@ -246,6 +374,7 @@ export default function StaffPage() {
             >
               <option value="ALL">All Roles</option>
               <option value="MENTOR">Mentor</option>
+              <option value="TEACHER">Teacher</option>
               <option value="STAFF">Staff</option>
               <option value="ADMIN">Admin</option>
             </select>
@@ -260,9 +389,7 @@ export default function StaffPage() {
             >
               <option value="ALL">All Statuses</option>
               <option value="Active">Active</option>
-              <option value="On Leave">On Leave</option>
               <option value="Inactive">Inactive</option>
-              <option value="Resigned">Resigned</option>
             </select>
           </div>
         </div>
@@ -283,7 +410,7 @@ export default function StaffPage() {
             <div>
               <h3 className="text-lg font-bold text-slate-900">No staff members found</h3>
               <p className="text-xs text-slate-500 mt-1">
-                Add instructors, mentors, and administrators to manage classes and students.
+                Add instructors, mentors, and staff members to manage classes and assigned students.
               </p>
             </div>
             <button
@@ -302,10 +429,9 @@ export default function StaffPage() {
               <thead className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-3.5">Staff Member</th>
-                  <th className="px-6 py-3.5">Employee ID</th>
+                  <th className="px-6 py-3.5">Staff ID</th>
                   <th className="px-6 py-3.5">Role</th>
-                  <th className="px-6 py-3.5">Department</th>
-                  <th className="px-6 py-3.5">Designation</th>
+                  <th className="px-6 py-3.5">Assigned Course / Batch</th>
                   <th className="px-6 py-3.5">Phone</th>
                   <th className="px-6 py-3.5">Status</th>
                   <th className="px-6 py-3.5 text-right">Actions</th>
@@ -315,6 +441,12 @@ export default function StaffPage() {
                 {staffList.map((st) => {
                   const roleBadge = getRoleBadge(st.role);
                   const statusBadge = getStatusBadge(st.status);
+                  const assignedText = st.assigned_batch?.name
+                    ? st.assigned_batch.name
+                    : st.assigned_course?.name
+                    ? st.assigned_course.name
+                    : "Not assigned";
+
                   return (
                     <tr key={st.id} className="hover:bg-slate-50/60 transition-colors">
                       <td className="px-6 py-4">
@@ -336,8 +468,7 @@ export default function StaffPage() {
                           {roleBadge.label}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-xs">{st.department}</td>
-                      <td className="px-6 py-4 text-xs font-semibold text-slate-800">{st.designation}</td>
+                      <td className="px-6 py-4 text-xs font-semibold text-slate-800">{assignedText}</td>
                       <td className="px-6 py-4 text-xs font-mono">{st.phone}</td>
                       <td className="px-6 py-4">
                         <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-md border ${statusBadge.style}`}>
@@ -346,10 +477,17 @@ export default function StaffPage() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleCopy(st.employee_id, `id-${st.id}`, `Staff ID (${st.name})`)}
+                            className="p-1.5 text-slate-500 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
+                            title="Copy Staff ID"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
                           <Link
                             href={`/dashboard/staff/${st.id}`}
                             className="p-1.5 text-slate-500 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
-                            title="View Staff Profile"
+                            title="View Staff Profile & Credentials"
                           >
                             <Eye className="w-4 h-4" />
                           </Link>
@@ -366,7 +504,7 @@ export default function StaffPage() {
                           <button
                             onClick={() => handleToggleStatus(st)}
                             className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                            title={st.status === "Active" ? "Deactivate Staff" : "Activate Staff"}
+                            title={st.status === "Active" ? "Deactivate Account" : "Activate Account"}
                           >
                             <UserX className="w-4 h-4" />
                           </button>
@@ -388,6 +526,8 @@ export default function StaffPage() {
         onSuccess={fetchStaff}
         editingStaff={editingStaff}
       />
+
+      {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
     </div>
   );
 }

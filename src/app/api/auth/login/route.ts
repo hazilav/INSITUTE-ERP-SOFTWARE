@@ -9,7 +9,7 @@ export async function POST(request: Request) {
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: "Email or Student ID and password are required" },
+        { error: "Email, Staff ID, or Student ID and password are required" },
         { status: 400 }
       );
     }
@@ -34,9 +34,21 @@ export async function POST(request: Request) {
       }
     }
 
+    // 3. If not found, try finding Staff by Staff ID / Employee ID
+    if (!user) {
+      const staff = await db.staffProfile.findFirst({
+        where: { employee_id: email.trim() },
+        include: { user: { include: { institute: true } } },
+      });
+
+      if (staff && staff.user) {
+        user = staff.user;
+      }
+    }
+
     if (!user) {
       return NextResponse.json(
-        { error: "Invalid email / Student ID or password" },
+        { error: "Invalid login credentials" },
         { status: 401 }
       );
     }
@@ -51,7 +63,7 @@ export async function POST(request: Request) {
     const isMatch = await comparePassword(password, user.password_hash);
     if (!isMatch) {
       return NextResponse.json(
-        { error: "Invalid email / Student ID or password" },
+        { error: "Invalid login credentials" },
         { status: 401 }
       );
     }

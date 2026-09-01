@@ -159,6 +159,7 @@ model Course {
   mentor_assignments MentorAssignment[]
   recurring_schedules RecurringSchedule[]
   certificates       Certificate[]
+  staff_profiles     StaffProfile[]
 
   @@unique([institute_id, code])
   @@map("courses")
@@ -194,6 +195,7 @@ model Batch {
   fee_plans          FeePlan[]
   mentor_assignments MentorAssignment[]
   recurring_schedules RecurringSchedule[]
+  assigned_staff     StaffProfile[]
 
   @@unique([institute_id, code])
   @@map("batches")
@@ -537,15 +539,20 @@ model StaffProfile {
   joining_date DateTime  @default(now())
   department   String    @default("Academics")
   designation  String    @default("Instructor")
-  role         String    @default("STAFF") // ADMIN, STAFF, MENTOR
-  status       String    @default("Active") // Active, On Leave, Inactive, Resigned
-  created_at   DateTime  @default(now())
-  updated_at   DateTime  @updatedAt
+  role               String    @default("STAFF") // ADMIN, STAFF, MENTOR
+  status             String    @default("Active") // Active, On Leave, Inactive, Resigned
+  assigned_course_id String?
+  assigned_batch_id  String?
+  permissions        String?   @default("students,attendance,tasks,activities,notes,announcements")
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
 
-  institute Institute @relation(fields: [institute_id], references: [id], onDelete: Cascade)
-  user      User?     @relation(fields: [user_id], references: [id], onDelete: SetNull)
-  attendances    StaffAttendance[]
-  leave_requests LeaveRequest[]
+  institute       Institute         @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  user            User?             @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  assigned_course Course?           @relation(fields: [assigned_course_id], references: [id], onDelete: SetNull)
+  assigned_batch  Batch?            @relation(fields: [assigned_batch_id], references: [id], onDelete: SetNull)
+  attendances     StaffAttendance[]
+  leave_requests  LeaveRequest[]
 
   @@unique([institute_id, employee_id])
   @@map("staff_profiles")

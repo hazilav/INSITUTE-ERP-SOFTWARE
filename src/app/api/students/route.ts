@@ -41,6 +41,32 @@ export async function GET(request: Request) {
       is_archived: includeArchived ? true : false,
     };
 
+    // SECTION 4: MENTOR STUDENT ISOLATION
+    if (user.role === "MENTOR" || user.role === "STAFF") {
+      const mentoredBatches = await db.batch.findMany({
+        where: { institute_id: institute.id, primary_mentor_id: user.id, is_archived: false },
+        select: { id: true },
+      });
+      const mentorAssignments = await db.mentorAssignment.findMany({
+        where: { institute_id: institute.id, mentor_id: user.id },
+        select: { batch_id: true },
+      });
+      const staffProfile = await db.staffProfile.findFirst({
+        where: { institute_id: institute.id, user_id: user.id },
+      });
+
+      const assignedBatchIds = new Set<string>();
+      mentoredBatches.forEach((b) => assignedBatchIds.add(b.id));
+      mentorAssignments.forEach((ma) => {
+        if (ma.batch_id) assignedBatchIds.add(ma.batch_id);
+      });
+      if (staffProfile?.assigned_batch_id) assignedBatchIds.add(staffProfile.assigned_batch_id);
+
+      if (assignedBatchIds.size > 0) {
+        whereCondition.batch_id = { in: Array.from(assignedBatchIds) };
+      }
+    }
+
     if (status !== "ALL") {
       whereCondition.status = status;
     }
@@ -163,7 +189,6 @@ export async function POST(request: Request) {
       ? status
       : "ACTIVE";
 
-    // Validate course_id & batch_id belong to current institute if provided
     let validCourseId = null;
     if (course_id) {
       const c = await db.course.findFirst({ where: { id: course_id, institute_id: institute.id } });
@@ -176,7 +201,6 @@ export async function POST(request: Request) {
       if (b) validBatchId = b.id;
     }
 
-    // Determine Student ID Code
     const year = new Date().getFullYear();
     const prefix = institute.student_id_prefix || "STU";
     let studentCode = custom_student_code?.trim();
@@ -270,7 +294,6 @@ export async function POST(request: Request) {
         },
       });
 
-      // Log Activity Timeline events
       await tx.studentActivity.create({
         data: {
           institute_id: institute.id,
