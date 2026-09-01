@@ -689,18 +689,6 @@ export default async function BatchProfilePage({
           </div>
         </div>
       )}
-
-      {activeTab !== "overview" && activeTab !== "students" && activeTab !== "attendance" && activeTab !== "activities" && activeTab !== "marks" && (
-        <div className="bg-white rounded-2xl p-12 text-center border border-slate-200/80 shadow-sm space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
-            <Lock className="w-6 h-6" />
-          </div>
-          <h3 className="text-lg font-bold text-slate-900 capitalize">{activeTab} Module</h3>
-          <span className="inline-block px-3 py-1 rounded-full bg-brand-50 text-brand-700 text-xs font-semibold">
-            Coming soon
-          </span>
-        </div>
-      )}
     </div>
   );
 }

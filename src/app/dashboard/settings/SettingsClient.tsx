@@ -29,6 +29,7 @@ import {
   Link2,
 } from "lucide-react";
 import { getStudentPortalUrl, getStaffPortalUrl, sharePortalLink } from "@/lib/urls";
+import { formatErrorMessage } from "@/lib/errors";
 
 interface SettingsClientProps {
   institute: any;
@@ -407,11 +408,13 @@ export default function SettingsClient({
       });
       const data = await res.json();
       if (data.success) {
-        alert("Institute has been deactivated. Preserving database records.");
-        window.location.href = "/login";
+        setMessage({ type: "success", text: "Institute has been deactivated. Preserving database records." });
+        setTimeout(() => { window.location.href = "/login"; }, 1500);
+      } else {
+        setMessage({ type: "error", text: formatErrorMessage(data.error, "Error deactivating institute.") });
       }
     } catch (err: any) {
-      alert("Error deactivating institute: " + err.message);
+      setMessage({ type: "error", text: formatErrorMessage(err, "Error deactivating institute.") });
     } finally {
       setSaving(false);
     }

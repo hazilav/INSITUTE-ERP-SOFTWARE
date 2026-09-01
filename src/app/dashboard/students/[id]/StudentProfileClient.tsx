@@ -50,6 +50,7 @@ import PaymentReceiptModal from "@/components/PaymentReceiptModal";
 import Toast from "@/components/Toast";
 import { calculateGrade } from "@/lib/grading";
 import { getStudentPortalUrl } from "@/lib/urls";
+import { formatErrorMessage } from "@/lib/errors";
 
 interface ActivityEvent {
   id: string;
@@ -221,10 +222,10 @@ export default function StudentProfileClient({
         setToastMessage(`Portal account ${data.status === "ACTIVE" ? "reactivated" : "deactivated"}.`);
         router.refresh();
       } else {
-        alert(data.error || "Failed to update portal status.");
+        setToastMessage(formatErrorMessage(data.error, "Failed to update portal status."));
       }
     } catch (err: any) {
-      alert(err.message || "Network error.");
+      setToastMessage(formatErrorMessage(err, "Network error."));
     }
   };
 
@@ -250,10 +251,10 @@ export default function StudentProfileClient({
         setTempCredentials(data.credentials);
         setToastMessage("Temporary password generated!");
       } else {
-        alert(data.error || "Failed to generate password.");
+        setToastMessage(formatErrorMessage(data.error, "Failed to generate password."));
       }
     } catch (err: any) {
-      alert(err.message || "Network error.");
+      setToastMessage(formatErrorMessage(err, "Network error."));
     }
   };
 
@@ -369,7 +370,13 @@ export default function StudentProfileClient({
       icon: CalendarCheck,
       color: isLowAttendance ? "text-rose-600 bg-rose-50" : "text-purple-600 bg-purple-50",
     },
-    { title: "Course Progress", value: "—", label: "Module coming soon", icon: BookOpen, color: "text-blue-600 bg-blue-50" },
+    {
+      title: "Course Progress",
+      value: student.learning_mode ? student.learning_mode.toUpperCase() : "ACTIVE",
+      label: student.course?.name ? `Course: ${student.course.name}` : "Active Student Enrollment",
+      icon: BookOpen,
+      color: "text-blue-600 bg-blue-50",
+    },
     {
       title: "Activities",
       value: `${completedStudentActivities} / ${totalStudentActivities}`,

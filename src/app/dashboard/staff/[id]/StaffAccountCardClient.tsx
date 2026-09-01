@@ -4,6 +4,7 @@ import { useState } from "react";
 import { KeyRound, Copy, Share2, ShieldCheck, Mail, Lock, X, Check } from "lucide-react";
 import { getStaffPortalUrl, sharePortalLink } from "@/lib/urls";
 import Toast from "@/components/Toast";
+import { formatErrorMessage } from "@/lib/errors";
 
 interface StaffAccountCardClientProps {
   staffId: string;
@@ -52,10 +53,10 @@ export default function StaffAccountCardClient({
         setTempCredentials(data.credentials);
         setToastMessage("Staff temporary password generated!");
       } else {
-        alert(data.error || "Failed to reset password.");
+        setToastMessage(formatErrorMessage(data.error, "Failed to reset password."));
       }
     } catch (err: any) {
-      alert(err.message || "Network error.");
+      setToastMessage(formatErrorMessage(err, "Network error."));
     }
   };
 

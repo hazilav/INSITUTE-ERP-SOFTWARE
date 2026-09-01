@@ -3,10 +3,9 @@ export interface CSVColumn {
   key: string;
 }
 
-export function exportToCSV(filename: string, columns: CSVColumn[], data: any[]) {
+export function exportToCSV(filename: string, columns: CSVColumn[], data: any[]): boolean {
   if (!data || data.length === 0) {
-    alert("No data available to export.");
-    return;
+    return false;
   }
 
   const headers = columns.map((col) => `"${col.header.replace(/"/g, '""')}"`).join(",");
@@ -28,6 +27,7 @@ export function exportToCSV(filename: string, columns: CSVColumn[], data: any[])
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  return true;
 }
 
 export function printReport(
@@ -36,11 +36,10 @@ export function printReport(
   filterSummary: string,
   headers: string[],
   rows: (string | number)[][]
-) {
+): boolean {
   const printWindow = window.open("", "_blank");
   if (!printWindow) {
-    alert("Please allow popups to print reports.");
-    return;
+    return false;
   }
 
   const generatedDate = new Date().toLocaleString();
@@ -68,7 +67,7 @@ export function printReport(
         </style>
       </head>
       <body>
-        <div className="header">
+        <div class="header">
           <h1 class="title">${instituteName}</h1>
           <p class="subtitle">${reportTitle}</p>
           <div class="meta">
@@ -115,4 +114,5 @@ export function printReport(
 
   printWindow.document.write(html);
   printWindow.document.close();
+  return true;
 }
