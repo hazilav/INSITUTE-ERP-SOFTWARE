@@ -15,6 +15,7 @@ import {
   Wand2,
   Check,
 } from "lucide-react";
+import { formatErrorMessage } from "@/lib/errors";
 
 interface CreateStaffModalProps {
   isOpen: boolean;
@@ -206,7 +207,7 @@ export default function CreateStaffModal({
         onClose();
       }
     } catch (err: any) {
-      setError(err.message || "An error occurred");
+      setError(formatErrorMessage(err, "Unable to save staff member. Please try again."));
     } finally {
       setLoading(false);
     }

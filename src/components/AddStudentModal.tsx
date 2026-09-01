@@ -16,6 +16,7 @@ import {
   Lock,
 } from "lucide-react";
 import { getStudentPortalUrl, sharePortalLink } from "@/lib/urls";
+import { formatErrorMessage } from "@/lib/errors";
 
 interface OptionItem {
   id: string;
@@ -157,7 +158,7 @@ export default function AddStudentModal({
         onClose();
       }
     } catch (err: any) {
-      setError(err.message || "An unexpected error occurred");
+      setError(formatErrorMessage(err, "Unable to create student record. Please try again."));
     } finally {
       setLoading(false);
     }
