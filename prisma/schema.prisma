@@ -1,0 +1,832 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Institute {
+  id             String   @id @default(cuid())
+  name           String
+  logo           String?
+  phone          String?
+  email          String?
+  address             String?
+  website             String?
+  city                String?
+  state               String?
+  country             String?
+  is_deactivated       Boolean  @default(false)
+  institute_mode      String?  @default("hybrid") // offline, online, hybrid
+  work_start_time     String?  @default("10:00")
+  work_end_time       String?  @default("18:00")
+  late_threshold_mins Int?     @default(15)
+  half_day_hours      Float?   @default(4.0)
+  student_id_prefix   String   @default("INS")
+  student_id_start    Int      @default(1)
+  passing_percentage  Float    @default(40.0)
+  grade_system        String?  @default("A+,A,B+,B,C,D,F")
+  academic_year       String?
+  default_class_duration Int?  @default(60)
+  min_attendance_pct  Float    @default(75.0)
+  allow_late_status   Boolean  @default(true)
+  allow_leave_status  Boolean  @default(true)
+  default_currency    String   @default("USD")
+  payment_methods     String?  @default("Cash,UPI,Bank Transfer,Card,Online,Other")
+  fee_reminder_days   Int?     @default(3)
+  notify_academic     Boolean  @default(true)
+  notify_attendance   Boolean  @default(true)
+  notify_fees         Boolean  @default(true)
+  notify_tasks        Boolean  @default(true)
+  notify_system       Boolean  @default(true)
+  portal_enabled      Boolean  @default(true)
+  student_login_enabled Boolean @default(true)
+  require_first_login_pwd_change Boolean @default(false)
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  users                    User[]
+  students                 Student[]
+  courses                  Course[]
+  batches                  Batch[]
+  classes                  Class[]
+  recorded_content         RecordedContent[]
+  attendance_records       AttendanceRecord[]
+  activities               Activity[]
+  activity_submissions     ActivitySubmission[]
+  assessments              Assessment[]
+  assessment_results       AssessmentResult[]
+  fee_plans                FeePlan[]
+  installments             Installment[]
+  payments                 Payment[]
+  staff_profiles           StaffProfile[]
+  mentor_assignments       MentorAssignment[]
+  student_tasks            StudentTask[]
+  student_content_progress StudentContentProgress[]
+  notifications            Notification[]
+  notification_preferences NotificationPreference[]
+  message_templates        MessageTemplate[]
+  staff_attendances        StaffAttendance[]
+  leave_requests           LeaveRequest[]
+  rooms                    Room[]
+  class_audit_histories    ClassAuditHistory[]
+  recurring_schedules      RecurringSchedule[]
+  student_documents        StudentDocument[]
+  certificates             Certificate[]
+  role_permissions         RolePermission[]
+
+  @@map("institutes")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  institute_id  String
+  name          String
+  email         String
+  phone         String?
+  password_hash String
+  role          String    @default("STAFF") // OWNER, ADMIN, STAFF, MENTOR, STUDENT
+  status               String    @default("ACTIVE") // ACTIVE, INACTIVE, PENDING
+  must_change_password Boolean   @default(false)
+  last_login           DateTime?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  institute            Institute            @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  sessions             Session[]
+  student              Student?
+  staff_profile        StaffProfile?
+  mentored_batches     Batch[]              @relation("PrimaryMentorBatches")
+  mentored_classes     Class[]              @relation("MentorClasses")
+  marked_attendance    AttendanceRecord[]   @relation("MarkedAttendance")
+  mentored_activities  Activity[]           @relation("MentorActivities")
+  reviewed_submissions ActivitySubmission[] @relation("ReviewedSubmissions")
+  mentored_assessments Assessment[]         @relation("MentorAssessments")
+  finalized_assessments Assessment[]        @relation("FinalizedAssessments")
+  evaluated_results    AssessmentResult[]   @relation("EvaluatedResults")
+  recorded_payments    Payment[]            @relation("RecordedPayments")
+  mentor_assignments   MentorAssignment[]   @relation("UserMentorAssignments")
+  received_notifications Notification[]     @relation("UserNotifications")
+  notification_preferences NotificationPreference[] @relation("UserNotificationPreferences")
+  marked_staff_attendances StaffAttendance[] @relation("MarkedStaffAttendance")
+  reviewed_leave_requests  LeaveRequest[]    @relation("ReviewedLeaveRequests")
+  created_classes          Class[]           @relation("CreatedClasses")
+  class_audit_histories    ClassAuditHistory[]
+  uploaded_student_documents StudentDocument[] @relation("UploadedStudentDocuments")
+  generated_certificates   Certificate[]     @relation("GeneratedCertificates")
+
+  @@unique([institute_id, email])
+  @@map("users")
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  user_id    String
+  token      String   @unique
+  expires_at DateTime
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Course {
+  id             String   @id @default(cuid())
+  institute_id   String
+  name           String
+  code           String?
+  description    String?
+  duration       String?
+  learning_mode  String   @default("hybrid") // offline, online, hybrid
+  status         String   @default("Active") // Draft, Active, Archived
+  is_archived    Boolean  @default(false)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  institute          Institute          @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  batches            Batch[]
+  students           Student[]
+  classes            Class[]
+  recorded_content   RecordedContent[]
+  attendance_records AttendanceRecord[]
+  activities         Activity[]
+  assessments        Assessment[]
+  fee_plans          FeePlan[]
+  mentor_assignments MentorAssignment[]
+  recurring_schedules RecurringSchedule[]
+  certificates       Certificate[]
+
+  @@unique([institute_id, code])
+  @@map("courses")
+}
+
+model Batch {
+  id                String    @id @default(cuid())
+  institute_id      String
+  course_id         String
+  primary_mentor_id String?
+  name              String
+  code              String?
+  start_date        DateTime?
+  end_date          DateTime?
+  learning_mode     String    @default("hybrid") // offline, online, hybrid
+  status            String    @default("Active") // Upcoming, Active, Completed, Archived
+  classroom         String?   // Room number e.g. Room 201
+  days              String?   // e.g. Mon, Wed, Fri
+  start_time        String?   // e.g. 10:00 AM
+  end_time          String?   // e.g. 12:00 PM
+  is_archived       Boolean   @default(false)
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  institute          Institute          @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  course             Course             @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  primary_mentor     User?              @relation("PrimaryMentorBatches", fields: [primary_mentor_id], references: [id], onDelete: SetNull)
+  students           Student[]
+  classes            Class[]
+  attendance_records AttendanceRecord[]
+  activities         Activity[]
+  assessments        Assessment[]
+  fee_plans          FeePlan[]
+  mentor_assignments MentorAssignment[]
+  recurring_schedules RecurringSchedule[]
+
+  @@unique([institute_id, code])
+  @@map("batches")
+}
+
+model Class {
+  id                  String   @id @default(cuid())
+  institute_id        String
+  course_id           String
+  batch_id            String
+  mentor_id           String?  // Mentor user ID
+  title               String
+  topic               String?
+  description         String?
+  class_type          String   @default("physical") // physical, live_online, recorded, hybrid
+  date                DateTime
+  start_time          String?  // e.g. 10:00 AM
+  end_time            String?  // e.g. 12:00 PM
+  room                String?  // Room name string fallback
+  room_id             String?  // Relation to Room
+  meeting_link        String?  // Meeting link for live_online
+  meeting_platform    String?  // Zoom, Google Meet, Teams, Other
+  meeting_id          String?
+  meeting_password    String?
+  content_url         String?  // Video/content URL for recorded
+  status              String   @default("Scheduled") // Scheduled, Live, Completed, Cancelled, Rescheduled
+  cancellation_reason String?
+  activity_id         String?
+  created_by_id       String?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  institute          Institute           @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  course             Course              @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  batch              Batch               @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  mentor             User?               @relation("MentorClasses", fields: [mentor_id], references: [id], onDelete: SetNull)
+  roomItem           Room?               @relation(fields: [room_id], references: [id], onDelete: SetNull)
+  activityItem       Activity?           @relation(fields: [activity_id], references: [id], onDelete: SetNull)
+  created_by         User?               @relation("CreatedClasses", fields: [created_by_id], references: [id], onDelete: SetNull)
+  attendance_records AttendanceRecord[]
+  audit_history      ClassAuditHistory[]
+
+  @@map("classes")
+}
+
+model RecordedContent {
+  id             String   @id @default(cuid())
+  institute_id   String
+  course_id      String
+  module_name    String?
+  title          String
+  description    String?
+  video_url      String
+  duration       String?  // e.g. "45 mins"
+  publish_status String   @default("Published") // Draft, Published
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  institute Institute                @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  course    Course                   @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  progress  StudentContentProgress[]
+
+  @@map("recorded_contents")
+}
+
+model Student {
+  id            String    @id @default(cuid())
+  institute_id  String
+  user_id       String?   @unique
+  course_id     String?
+  batch_id      String?
+  student_code  String
+  name          String
+  photo         String?
+  phone         String
+  email         String?
+  dob           DateTime?
+  gender        String?
+  address       String?
+  parent_name   String?
+  parent_phone  String?
+  learning_mode String    @default("hybrid") // offline, online, hybrid
+  status        String    @default("ACTIVE") // ACTIVE, ON_HOLD, COMPLETED, DROPPED, ARCHIVED
+  is_archived   Boolean   @default(false)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  institute            Institute                @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  user                 User?                    @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  course               Course?                  @relation(fields: [course_id], references: [id], onDelete: SetNull)
+  batch                Batch?                   @relation(fields: [batch_id], references: [id], onDelete: SetNull)
+  activities           StudentActivity[]
+  attendance_records   AttendanceRecord[]
+  activity_submissions ActivitySubmission[]
+  assessment_results   AssessmentResult[]
+  fee_plans            FeePlan[]
+  payments             Payment[]
+  tasks                StudentTask[]
+  content_progress     StudentContentProgress[]
+  documents            StudentDocument[]
+  certificates         Certificate[]
+
+  @@unique([institute_id, student_code])
+  @@map("students")
+}
+
+model StudentActivity {
+  id           String   @id @default(cuid())
+  institute_id String
+  student_id   String
+  action       String
+  performed_by String
+  details      String?
+  created_at   DateTime @default(now())
+
+  student Student @relation(fields: [student_id], references: [id], onDelete: Cascade)
+
+  @@map("student_activities")
+}
+
+model AttendanceRecord {
+  id           String   @id @default(cuid())
+  institute_id String
+  student_id   String
+  class_id     String
+  course_id    String
+  batch_id     String
+  marked_by_id String?
+  date         DateTime
+  status       String   @default("Present") // Present, Absent, Late, Leave
+  class_type   String   @default("physical") // physical, live_online
+  remarks      String?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  institute Institute @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  student   Student   @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  classItem Class     @relation(fields: [class_id], references: [id], onDelete: Cascade)
+  course    Course    @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  batch     Batch     @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  marked_by User?     @relation("MarkedAttendance", fields: [marked_by_id], references: [id], onDelete: SetNull)
+
+  @@unique([institute_id, student_id, class_id])
+  @@map("attendance_records")
+}
+
+model Activity {
+  id               String    @id @default(cuid())
+  institute_id     String
+  course_id        String
+  batch_id         String
+  mentor_id        String?
+  title            String
+  description      String?
+  module_name      String?
+  activity_type    String    @default("Assignment") // Assignment, Project, Quiz, Practical, Homework, Other
+  submission_type  String    @default("online") // online, offline, hybrid
+  assigned_date    DateTime  @default(now())
+  due_date         DateTime
+  maximum_marks    Float     @default(100.0)
+  grading_required Boolean   @default(true)
+  status           String    @default("Draft") // Draft, Published, Closed, Archived
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  institute   Institute            @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  course      Course               @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  batch       Batch                @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  mentor      User?                @relation("MentorActivities", fields: [mentor_id], references: [id], onDelete: SetNull)
+  submissions ActivitySubmission[]
+  classes     Class[]
+
+  @@map("activities")
+}
+
+model ActivitySubmission {
+  id              String    @id @default(cuid())
+  institute_id    String
+  activity_id     String
+  student_id      String
+  submission_type String    @default("online") // online, offline
+  submission_text String?
+  file_url        String?
+  file_name       String?
+  submitted_at    DateTime  @default(now())
+  status          String    @default("Submitted") // Not Submitted, Submitted, Late, Under Review, Reviewed, Needs Revision
+  obtained_marks  Float?
+  feedback        String?
+  notes           String?
+  reviewed_by_id  String?
+  reviewed_at     DateTime?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  institute   Institute @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  activity    Activity  @relation(fields: [activity_id], references: [id], onDelete: Cascade)
+  student     Student   @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  reviewed_by User?     @relation("ReviewedSubmissions", fields: [reviewed_by_id], references: [id], onDelete: SetNull)
+
+  @@unique([institute_id, activity_id, student_id])
+  @@map("activity_submissions")
+}
+
+model Assessment {
+  id              String    @id @default(cuid())
+  institute_id    String
+  course_id       String
+  batch_id        String
+  mentor_id       String?
+  name            String
+  type            String    @default("Exam") // Exam, Quiz, Assignment, Project, Practical, Presentation, Other
+  description     String?
+  module_name     String?
+  assessment_date DateTime
+  maximum_marks   Float     @default(100.0)
+  passing_marks   Float     @default(40.0)
+  status          String    @default("Scheduled") // Draft, Scheduled, Evaluation Pending, Completed, Archived
+  finalized       Boolean   @default(false)
+  finalized_by_id String?
+  finalized_at    DateTime?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  institute    Institute          @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  course       Course             @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  batch        Batch              @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  mentor       User?              @relation("MentorAssessments", fields: [mentor_id], references: [id], onDelete: SetNull)
+  finalized_by User?              @relation("FinalizedAssessments", fields: [finalized_by_id], references: [id], onDelete: SetNull)
+  results      AssessmentResult[]
+
+  @@map("assessments")
+}
+
+model AssessmentResult {
+  id              String    @id @default(cuid())
+  institute_id    String
+  assessment_id   String
+  student_id      String
+  obtained_marks  Float
+  percentage      Float
+  grade           String    @default("F") // A+, A, B+, B, C, D, F
+  is_pass         Boolean   @default(true)
+  result_status   String    @default("Evaluated") // Pending, Evaluated
+  feedback        String?
+  evaluated_by_id String?
+  evaluated_at    DateTime  @default(now())
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  institute    Institute  @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  assessment   Assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade)
+  student      Student    @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  evaluated_by User?      @relation("EvaluatedResults", fields: [evaluated_by_id], references: [id], onDelete: SetNull)
+
+  @@unique([institute_id, assessment_id, student_id])
+  @@map("assessment_results")
+}
+
+model FeePlan {
+  id             String   @id @default(cuid())
+  institute_id   String
+  student_id     String
+  course_id      String
+  batch_id       String?
+  course_fee     Float    @default(0.0)
+  discount_type  String   @default("fixed") // fixed, percentage
+  discount_value Float    @default(0.0)
+  final_fee      Float    @default(0.0)
+  amount_paid    Float    @default(0.0)
+  balance        Float    @default(0.0)
+  payment_type   String   @default("full") // full, installments, custom
+  status         String   @default("Pending") // Paid, Partially Paid, Pending, Overdue
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  institute    Institute     @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  student      Student       @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  course       Course        @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  batch        Batch?        @relation(fields: [batch_id], references: [id], onDelete: SetNull)
+  installments Installment[]
+  payments     Payment[]
+
+  @@map("fee_plans")
+}
+
+model Installment {
+  id           String   @id @default(cuid())
+  institute_id String
+  fee_plan_id  String
+  name         String   // e.g. "Installment 1", "Down Payment"
+  amount       Float
+  due_date     DateTime
+  status       String   @default("Pending") // Pending, Paid, Overdue
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  institute Institute @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  fee_plan  FeePlan   @relation(fields: [fee_plan_id], references: [id], onDelete: Cascade)
+  payments  Payment[]
+
+  @@map("installments")
+}
+
+model Payment {
+  id               String   @id @default(cuid())
+  institute_id     String
+  fee_plan_id      String
+  student_id       String
+  installment_id   String?
+  receipt_number   String
+  amount           Float
+  payment_date     DateTime @default(now())
+  payment_method   String   @default("UPI") // Cash, UPI, Bank Transfer, Card, Online Payment, Other
+  reference_number String?
+  notes            String?
+  recorded_by_id   String?
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  institute   Institute    @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  fee_plan    FeePlan      @relation(fields: [fee_plan_id], references: [id], onDelete: Cascade)
+  student     Student      @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  installment Installment? @relation(fields: [installment_id], references: [id], onDelete: SetNull)
+  recorded_by User?        @relation("RecordedPayments", fields: [recorded_by_id], references: [id], onDelete: SetNull)
+
+  @@unique([institute_id, receipt_number])
+  @@map("payments")
+}
+
+model StaffProfile {
+  id           String    @id @default(cuid())
+  institute_id String
+  user_id      String?   @unique
+  employee_id  String
+  name         String
+  photo        String?
+  phone        String
+  email        String?
+  address      String?
+  dob          DateTime?
+  joining_date DateTime  @default(now())
+  department   String    @default("Academics")
+  designation  String    @default("Instructor")
+  role         String    @default("STAFF") // ADMIN, STAFF, MENTOR
+  status       String    @default("Active") // Active, On Leave, Inactive, Resigned
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  institute Institute @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  attendances    StaffAttendance[]
+  leave_requests LeaveRequest[]
+
+  @@unique([institute_id, employee_id])
+  @@map("staff_profiles")
+}
+
+model MentorAssignment {
+  id              String   @id @default(cuid())
+  institute_id    String
+  mentor_id       String
+  course_id       String?
+  batch_id        String?
+  assignment_type String   @default("primary_mentor") // primary_mentor, secondary_mentor
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  institute Institute @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  mentor    User      @relation("UserMentorAssignments", fields: [mentor_id], references: [id], onDelete: Cascade)
+  course    Course?   @relation(fields: [course_id], references: [id], onDelete: SetNull)
+  batch     Batch?    @relation(fields: [batch_id], references: [id], onDelete: SetNull)
+
+  @@map("mentor_assignments")
+}
+
+model StudentTask {
+  id           String    @id @default(cuid())
+  institute_id String
+  student_id   String
+  title        String
+  description  String?
+  task_type    String    @default("assignment") // assignment, reading, video, project, exam, other
+  due_date     DateTime?
+  status       String    @default("Pending") // Pending, In Progress, Completed
+  priority     String    @default("Medium") // Low, Medium, High
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  institute Institute @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  student   Student   @relation(fields: [student_id], references: [id], onDelete: Cascade)
+
+  @@map("student_tasks")
+}
+
+model StudentContentProgress {
+  id           String   @id @default(cuid())
+  institute_id String
+  student_id   String
+  content_id   String
+  status       String   @default("Not Started") // Not Started, In Progress, Completed
+  updated_at   DateTime @updatedAt
+
+  institute Institute       @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  student   Student         @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  content   RecordedContent @relation(fields: [content_id], references: [id], onDelete: Cascade)
+
+  @@unique([institute_id, student_id, content_id])
+  @@map("student_content_progress")
+}
+
+model Notification {
+  id                  String    @id @default(cuid())
+  institute_id        String
+  recipient_user_id   String
+  type                String    // Academic, Attendance, Finance, Tasks, Account, System
+  category            String    // sub-category or category name
+  title               String
+  message             String
+  priority            String    @default("Normal") // Normal, Important, Urgent
+  related_entity_type String?   // activity, class, assessment, fee_plan, payment, student_task, user
+  related_entity_id   String?
+  action_url          String?
+  event_key           String?   // unique event reference for duplicate prevention
+  is_read             Boolean   @default(false)
+  read_at             DateTime?
+  expires_at          DateTime?
+  created_at          DateTime  @default(now())
+
+  institute Institute @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  recipient User      @relation("UserNotifications", fields: [recipient_user_id], references: [id], onDelete: Cascade)
+
+  @@index([recipient_user_id])
+  @@index([institute_id])
+  @@index([is_read])
+  @@index([created_at])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id           String   @id @default(cuid())
+  institute_id String
+  user_id      String
+  category     String   // Academic, Attendance, Finance, Tasks, System
+  enabled      Boolean  @default(true)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  institute Institute @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  user      User      @relation("UserNotificationPreferences", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([institute_id, user_id, category])
+  @@map("notification_preferences")
+}
+
+model MessageTemplate {
+  id            String   @id @default(cuid())
+  institute_id  String
+  name          String
+  category      String   // Finance, Academic, Attendance, Tasks, System
+  subject       String?
+  body_template String
+  placeholders  String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  institute Institute @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+
+  @@unique([institute_id, name])
+  @@map("message_templates")
+}
+
+model StaffAttendance {
+  id              String    @id @default(cuid())
+  institute_id    String
+  staff_id        String
+  attendance_date DateTime
+  status          String    @default("Present") // Present, Absent, Late, Half Day, Leave
+  check_in        DateTime?
+  check_out       DateTime?
+  working_minutes Int?
+  notes           String?
+  marked_by_id    String?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  institute Institute    @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  staff     StaffProfile @relation(fields: [staff_id], references: [id], onDelete: Cascade)
+  marked_by User?        @relation("MarkedStaffAttendance", fields: [marked_by_id], references: [id], onDelete: SetNull)
+
+  @@unique([institute_id, staff_id, attendance_date])
+  @@map("staff_attendances")
+}
+
+model LeaveRequest {
+  id               String    @id @default(cuid())
+  institute_id     String
+  staff_id         String
+  leave_type       String    // Casual, Sick, Emergency, Personal, Other
+  start_date       DateTime
+  end_date         DateTime
+  days_count       Int       @default(1)
+  reason           String
+  attachment_url   String?
+  status           String    @default("Pending") // Pending, Approved, Rejected, Cancelled
+  reviewed_by_id   String?
+  reviewed_at      DateTime?
+  rejection_reason String?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  institute   Institute    @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  staff       StaffProfile @relation(fields: [staff_id], references: [id], onDelete: Cascade)
+  reviewed_by User?        @relation("ReviewedLeaveRequests", fields: [reviewed_by_id], references: [id], onDelete: SetNull)
+
+  @@map("leave_requests")
+}
+
+model Room {
+  id           String   @id @default(cuid())
+  institute_id String
+  name         String   // e.g. "Lab 1", "Room 201"
+  room_number  String   // e.g. "201"
+  capacity     Int      @default(30)
+  location     String?  // e.g. "Building A, 2nd Floor"
+  status       String   @default("Available") // Available, Inactive
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  institute Institute @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  classes   Class[]
+
+  @@unique([institute_id, room_number])
+  @@map("rooms")
+}
+
+model ClassAuditHistory {
+  id              String   @id @default(cuid())
+  institute_id    String
+  class_id        String
+  user_id         String
+  action          String   // Created, Edited, Rescheduled, Cancelled, Restored
+  previous_values String?  // JSON string
+  new_values      String?  // JSON string
+  created_at      DateTime @default(now())
+
+  institute Institute @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  classItem Class     @relation(fields: [class_id], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("class_audit_histories")
+}
+
+model RecurringSchedule {
+  id              String   @id @default(cuid())
+  institute_id    String
+  course_id       String
+  batch_id        String
+  mentor_id       String?
+  title           String
+  class_type      String   @default("physical")
+  recurrence_type String   @default("weekly") // daily, weekly, custom
+  days_of_week    String?  // e.g. "MON,WED,FRI"
+  start_date      DateTime
+  end_date        DateTime
+  start_time      String
+  end_time        String
+  room_id         String?
+  meeting_link    String?
+  created_by_id   String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  institute Institute @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  course    Course    @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  batch     Batch     @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+
+  @@map("recurring_schedules")
+}
+
+model StudentDocument {
+  id                 String   @id @default(cuid())
+  institute_id       String
+  student_id         String
+  document_type      String   // ID Proof, Passport, Photo, Education Certificate, Application Form, Other
+  document_name      String
+  file_url           String
+  notes              String?
+  visible_to_student Boolean  @default(false)
+  uploaded_by_id     String?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  institute   Institute @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  student     Student   @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  uploaded_by User?     @relation("UploadedStudentDocuments", fields: [uploaded_by_id], references: [id], onDelete: SetNull)
+
+  @@map("student_documents")
+}
+
+model Certificate {
+  id                 String    @id @default(cuid())
+  institute_id       String
+  student_id         String
+  course_id          String?
+  certificate_type   String    // Course Completion, Participation, Internship, Achievement, Other
+  certificate_number String
+  issue_date         DateTime  @default(now())
+  status             String    @default("Issued") // Draft, Issued, Revoked
+  file_url           String?
+  generated_by_id    String?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  institute    Institute @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  student      Student   @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  course       Course?   @relation(fields: [course_id], references: [id], onDelete: SetNull)
+  generated_by User?     @relation("GeneratedCertificates", fields: [generated_by_id], references: [id], onDelete: SetNull)
+
+  @@unique([institute_id, certificate_number])
+  @@map("certificates")
+}
+
+model RolePermission {
+  id           String   @id @default(cuid())
+  institute_id String
+  role         String   // ADMIN, STAFF, MENTOR
+  module_key   String   // students, courses, classes, attendance, activities, marks, fees, staff, tasks, reports, documents, settings
+  is_allowed   Boolean  @default(true)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  institute Institute @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+
+  @@unique([institute_id, role, module_key])
+  @@map("role_permissions")
+}
+
