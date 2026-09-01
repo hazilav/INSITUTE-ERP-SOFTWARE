@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 
 interface ModalProps {
@@ -33,11 +33,17 @@ export default function Modal({
   footer,
   maxWidth = "xl",
 }: ModalProps) {
-  // Body scroll lock effect
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Body scroll lock effect & reset content scroll to top
   useEffect(() => {
     if (isOpen) {
       const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
+
+      if (contentRef.current) {
+        contentRef.current.scrollTop = 0;
+      }
 
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Escape") {
@@ -57,7 +63,7 @@ export default function Modal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-hidden">
       {/* Backdrop click dismiss */}
       <div
         onClick={onClose}
@@ -67,7 +73,7 @@ export default function Modal({
 
       {/* Modal Container Card */}
       <div
-        className={`relative z-10 bg-white rounded-3xl shadow-2xl border border-slate-100 w-[calc(100vw-24px)] ${maxWidthClasses[maxWidth]} max-h-[calc(100vh-24px)] sm:max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200`}
+        className={`relative z-10 bg-white rounded-3xl shadow-2xl border border-slate-100 w-[calc(100vw-24px)] ${maxWidthClasses[maxWidth]} max-h-[calc(100vh-24px)] sm:max-h-[90vh] flex flex-col overflow-hidden my-0 sm:my-auto animate-in fade-in zoom-in-95 duration-200`}
         role="dialog"
         aria-modal="true"
       >
@@ -100,7 +106,10 @@ export default function Modal({
         </div>
 
         {/* Scrollable Form Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 min-h-0 text-slate-800 text-xs sm:text-sm">
+        <div
+          ref={contentRef}
+          className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 min-h-0 text-slate-800 text-xs sm:text-sm"
+        >
           {children}
         </div>
 
