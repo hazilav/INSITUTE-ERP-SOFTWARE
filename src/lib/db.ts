@@ -5,7 +5,9 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 if (!process.env.DATABASE_URL) {
-  console.warn("⚠️ DATABASE_URL environment variable is missing. Please set DATABASE_URL in environment or Vercel settings.");
+  console.error(
+    "❌ CRITICAL SERVER ERROR: DATABASE_URL environment variable is missing. Please configure a PostgreSQL DATABASE_URL in your Vercel Environment Variables or .env file."
+  );
 }
 
 export const db =
