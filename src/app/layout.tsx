@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import NetworkStatusListener from "@/components/NetworkStatusListener";
 
 export const metadata: Metadata = {
   title: "Institute Management CRM",
@@ -14,6 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased bg-slate-50 text-slate-900 selection:bg-brand-500 selection:text-white">
+        <NetworkStatusListener />
         {children}
       </body>
     </html>
