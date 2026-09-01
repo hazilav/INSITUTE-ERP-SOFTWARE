@@ -29,12 +29,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# SQLite Database
-*.db
-*.db-journal
-/prisma/*.db
-/prisma/*.db-journal
-
 # OS & IDE
 .DS_Store
 *.pem
