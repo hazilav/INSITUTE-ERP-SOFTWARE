@@ -15,6 +15,7 @@ import {
   FileCheck,
 } from "lucide-react";
 import CertificateTemplateModal from "@/components/CertificateTemplateModal";
+import Modal from "@/components/Modal";
 
 interface CertificatesClientProps {
   instituteName: string;
@@ -311,99 +312,97 @@ export default function CertificatesClient({
 
       {/* Generate Certificate Modal */}
       {showGenerateModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                <Award className="w-5 h-5 text-amber-600" /> Generate Certificate
-              </h3>
-              <button onClick={() => setShowGenerateModal(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
+        <Modal
+          isOpen={true}
+          onClose={() => setShowGenerateModal(false)}
+          title="Generate Certificate"
+          subtitle="Issue official certification credentials with verification code"
+          icon={<Award className="w-5 h-5 text-amber-600" />}
+          maxWidth="md"
+          footer={
+            <div className="flex gap-3 w-full">
+              <button
+                type="button"
+                onClick={() => setShowGenerateModal(false)}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-xs sm:text-sm transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleGenerateCertificate}
+                disabled={submitting}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs sm:text-sm shadow-md shadow-amber-600/20 flex items-center justify-center transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {submitting ? "Generating..." : "Generate Certificate"}
               </button>
             </div>
+          }
+        >
+          <div className="space-y-4 text-xs">
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Select Student *</label>
+              <select
+                required
+                value={selectedStudentId}
+                onChange={(e) => handleStudentChange(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              >
+                <option value="">Choose Student</option>
+                {students.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.student_code})
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <form onSubmit={handleGenerateCertificate} className="space-y-3 text-xs">
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Select Course</label>
+              <select
+                value={selectedCourseId}
+                onChange={(e) => setSelectedCourseId(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              >
+                <option value="">Choose Course</option>
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Select Student *</label>
+                <label className="block font-bold text-slate-700 mb-1">Certificate Type *</label>
                 <select
+                  value={certificateType}
+                  onChange={(e) => setCertificateType(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                >
+                  <option value="Course Completion">Course Completion</option>
+                  <option value="Participation">Participation</option>
+                  <option value="Internship">Internship</option>
+                  <option value="Achievement">Achievement</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Issue Date *</label>
+                <input
+                  type="date"
                   required
-                  value={selectedStudentId}
-                  onChange={(e) => handleStudentChange(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800"
-                >
-                  <option value="">Choose Student</option>
-                  {students.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({s.student_code})
-                    </option>
-                  ))}
-                </select>
+                  value={issueDate}
+                  onChange={(e) => setIssueDate(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
               </div>
+            </div>
 
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Select Course</label>
-                <select
-                  value={selectedCourseId}
-                  onChange={(e) => setSelectedCourseId(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800"
-                >
-                  <option value="">Choose Course</option>
-                  {courses.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Certificate Type *</label>
-                  <select
-                    value={certificateType}
-                    onChange={(e) => setCertificateType(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 font-bold"
-                  >
-                    <option value="Course Completion">Course Completion</option>
-                    <option value="Participation">Participation</option>
-                    <option value="Internship">Internship</option>
-                    <option value="Achievement">Achievement</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Issue Date *</label>
-                  <input
-                    type="date"
-                    required
-                    value={issueDate}
-                    onChange={(e) => setIssueDate(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800"
-                  />
-                </div>
-              </div>
-
-              <div className="p-3 rounded-2xl bg-amber-50/50 border border-amber-200 text-[11px] text-amber-800 font-bold">
-                💡 Certificate number will be auto-generated in format <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-amber-300">CERT-2026-XXXXX</code>.
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowGenerateModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold disabled:opacity-50"
-                >
-                  {submitting ? "Generating..." : "Generate Certificate"}
-                </button>
-              </div>
-            </form>
+            <div className="p-3 rounded-2xl bg-amber-50/50 border border-amber-200 text-[11px] text-amber-800 font-bold">
+              💡 Certificate number will be auto-generated in format <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-amber-300">CERT-2026-XXXXX</code>.
+            </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* Certificate Printable Modal */}

@@ -22,6 +22,7 @@ import {
   Send,
   Sparkles,
 } from "lucide-react";
+import Modal from "@/components/Modal";
 
 interface RosterEntry {
   student: {
@@ -568,78 +569,91 @@ export default function ActivityDetailPage({ params }: { params: { id: string } 
 
       {/* Offline Submission Modal */}
       {offlineModalStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-md w-full p-6 relative animate-in fade-in zoom-in-95 duration-200">
-            <button
-              onClick={() => setOfflineModalStudent(null)}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="text-xl font-bold text-slate-900 mb-1">Record Offline Submission</h3>
-            <p className="text-xs text-slate-500 mb-4">
-              Record physical assignment receipt for <strong className="text-slate-800">{offlineModalStudent.name}</strong>
-            </p>
-
-            <form onSubmit={handleOfflineSubmission} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Submission Notes
-                </label>
-                <input
-                  type="text"
-                  value={offlineNotes}
-                  onChange={(e) => setOfflineNotes(e.target.value)}
-                  placeholder="e.g. Physical hardcopy project received"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setOfflineModalStudent(null)}
-                  className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-sm transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={offlineSubmitting}
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-md shadow-brand-500/20 flex items-center justify-center transition-all disabled:opacity-50"
-                >
-                  {offlineSubmitting ? (
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    "Mark as Submitted"
-                  )}
-                </button>
-              </div>
-            </form>
+        <Modal
+          isOpen={true}
+          onClose={() => setOfflineModalStudent(null)}
+          title="Record Offline Submission"
+          subtitle={`Student: ${offlineModalStudent.name} (${offlineModalStudent.student_code})`}
+          icon={<FileCheck className="w-5 h-5 text-emerald-600" />}
+          maxWidth="md"
+          footer={
+            <div className="flex gap-3 w-full">
+              <button
+                type="button"
+                onClick={() => setOfflineModalStudent(null)}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-xs sm:text-sm transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleOfflineSubmission}
+                disabled={offlineSubmitting}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs sm:text-sm shadow-md shadow-brand-500/20 flex items-center justify-center transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {offlineSubmitting ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  "Mark as Submitted"
+                )}
+              </button>
+            </div>
+          }
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                Submission Notes
+              </label>
+              <input
+                type="text"
+                value={offlineNotes}
+                onChange={(e) => setOfflineNotes(e.target.value)}
+                placeholder="e.g. Physical hardcopy project received"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
+              />
+            </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* Review Submission Modal */}
       {reviewEntry && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-lg w-full p-6 relative animate-in fade-in zoom-in-95 duration-200">
-            <button
-              onClick={() => setReviewEntry(null)}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="text-xl font-bold text-slate-900 mb-1">Review Student Submission</h3>
-            <p className="text-xs text-slate-500 mb-4">
-              Student: <strong className="text-slate-800">{reviewEntry.student.name}</strong> ({reviewEntry.student.student_code})
-            </p>
-
+        <Modal
+          isOpen={true}
+          onClose={() => setReviewEntry(null)}
+          title="Review Student Submission"
+          subtitle={`Student: ${reviewEntry.student.name} (${reviewEntry.student.student_code})`}
+          icon={<Edit className="w-5 h-5 text-brand-600" />}
+          maxWidth="lg"
+          footer={
+            <div className="flex gap-3 w-full">
+              <button
+                type="button"
+                onClick={() => setReviewEntry(null)}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-xs sm:text-sm transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleReviewSave}
+                disabled={reviewSubmitting}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs sm:text-sm shadow-md shadow-brand-500/20 flex items-center justify-center transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {reviewSubmitting ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  "Save Review"
+                )}
+              </button>
+            </div>
+          }
+        >
+          <div className="space-y-4">
             {/* Submission preview */}
             {reviewEntry.submission?.file_url && (
-              <div className="mb-4 p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
                 <span className="font-semibold text-slate-700">Attachment File</span>
                 <a
                   href={reviewEntry.submission.file_url}
@@ -653,81 +667,58 @@ export default function ActivityDetailPage({ params }: { params: { id: string } 
             )}
 
             {reviewEntry.submission?.submission_text && (
-              <div className="mb-4 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
                 <span className="font-semibold text-slate-400 block mb-1">Student Answer</span>
                 <p className="text-slate-800">{reviewEntry.submission.submission_text}</p>
               </div>
             )}
 
-            <form onSubmit={handleReviewSave} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Obtained Marks (Max: {activity.maximum_marks})
-                  </label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    max={activity.maximum_marks}
-                    value={obtainedMarks}
-                    onChange={(e) => setObtainedMarks(e.target.value)}
-                    placeholder="e.g. 85"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white font-mono font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Review Status
-                  </label>
-                  <select
-                    value={reviewStatus}
-                    onChange={(e) => setReviewStatus(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
-                  >
-                    <option value="Reviewed">Reviewed</option>
-                    <option value="Needs Revision">Needs Revision</option>
-                    <option value="Under Review">Under Review</option>
-                  </select>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                  Obtained Marks (Max: {activity.maximum_marks})
+                </label>
+                <input
+                  type="number"
+                  step="0.5"
+                  max={activity.maximum_marks}
+                  value={obtainedMarks}
+                  onChange={(e) => setObtainedMarks(e.target.value)}
+                  placeholder="e.g. 85"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white font-mono font-bold"
+                />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Mentor Feedback
+                  Review Status
                 </label>
-                <textarea
-                  rows={3}
-                  value={feedback}
-                  onChange={(e) => setFeedback(e.target.value)}
-                  placeholder="Feedback for the student..."
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white resize-none"
-                />
+                <select
+                  value={reviewStatus}
+                  onChange={(e) => setReviewStatus(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
+                >
+                  <option value="Reviewed">Reviewed</option>
+                  <option value="Needs Revision">Needs Revision</option>
+                  <option value="Under Review">Under Review</option>
+                </select>
               </div>
+            </div>
 
-              <div className="flex gap-3 pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setReviewEntry(null)}
-                  className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-sm transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={reviewSubmitting}
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-md shadow-brand-500/20 flex items-center justify-center transition-all disabled:opacity-50"
-                >
-                  {reviewSubmitting ? (
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    "Save Review"
-                  )}
-                </button>
-              </div>
-            </form>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                Mentor Feedback
+              </label>
+              <textarea
+                rows={3}
+                value={feedback}
+                onChange={(e) => setFeedback(e.target.value)}
+                placeholder="Feedback for the student..."
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white resize-none"
+              />
+            </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

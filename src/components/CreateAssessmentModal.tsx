@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import {
-  X,
   FileBarChart,
   AlertCircle,
   BookOpen,
@@ -10,6 +9,7 @@ import {
   Calendar,
   Award,
 } from "lucide-react";
+import Modal from "./Modal";
 
 interface OptionItem {
   id: string;
@@ -139,35 +139,47 @@ export default function CreateAssessmentModal({
     : batches;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-2xl w-full p-6 sm:p-8 relative my-8 animate-in fade-in zoom-in-95 duration-200">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        <div className="flex items-center gap-3 pb-4 mb-6 border-b border-slate-100">
-          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
-            <FileBarChart className="w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="text-xl font-bold text-slate-900">
-              {editingAssessment ? "Edit Assessment" : "Create New Assessment"}
-            </h3>
-            <p className="text-xs text-slate-500">Configure exam parameters, maximum score, and passing criteria</p>
-          </div>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={editingAssessment ? "Edit Assessment" : "Create New Assessment"}
+      subtitle="Configure exam parameters, maximum score, and passing criteria"
+      icon={<FileBarChart className="w-5 h-5 text-purple-600" />}
+      maxWidth="2xl"
+      footer={
+        <div className="flex gap-3 w-full">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-xs sm:text-sm transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading}
+            className="flex-1 py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs sm:text-sm shadow-md shadow-brand-500/20 flex items-center justify-center transition-all disabled:opacity-50 cursor-pointer"
+          >
+            {loading ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : editingAssessment ? (
+              "Save Changes"
+            ) : (
+              "Create Assessment"
+            )}
+          </button>
         </div>
+      }
+    >
+      {error && (
+        <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
 
-        {error && (
-          <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
               Assessment Name <span className="text-red-500">*</span>
@@ -332,30 +344,7 @@ export default function CreateAssessmentModal({
             />
           </div>
 
-          <div className="flex gap-3 pt-4 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-sm transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-md shadow-brand-500/20 flex items-center justify-center transition-all disabled:opacity-50"
-            >
-              {loading ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : editingAssessment ? (
-                "Save Changes"
-              ) : (
-                "Create Assessment"
-              )}
-            </button>
-          </div>
-        </form>
       </div>
-    </div>
+    </Modal>
   );
 }

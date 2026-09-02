@@ -12,6 +12,7 @@ import {
   X,
   MessageSquare,
 } from "lucide-react";
+import Modal from "@/components/Modal";
 
 interface LeaveManagementClientProps {
   instituteName: string;
@@ -213,36 +214,44 @@ export default function LeaveManagementClient({ instituteName }: LeaveManagement
 
       {/* Rejection Modal */}
       {rejectingLeaveId && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl">
-            <h3 className="font-bold text-slate-900 text-base">Reject Leave Request</h3>
-            <p className="text-xs text-slate-500">
-              Please provide a clear rejection reason for the staff member:
-            </p>
-            <textarea
-              rows={3}
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="Enter rejection reason..."
-              className="w-full p-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-brand-500"
-            />
-            <div className="flex items-center justify-end gap-2 pt-2">
+        <Modal
+          isOpen={true}
+          onClose={() => setRejectingLeaveId(null)}
+          title="Reject Leave Request"
+          subtitle="Please provide a clear rejection reason for the staff member"
+          icon={<XCircle className="w-5 h-5 text-rose-600" />}
+          maxWidth="md"
+          footer={
+            <div className="flex gap-3 w-full">
               <button
+                type="button"
                 onClick={() => setRejectingLeaveId(null)}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold text-xs"
+                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-xs sm:text-sm transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={() => handleAction(rejectingLeaveId, "reject", rejectionReason)}
                 disabled={processing || !rejectionReason.trim()}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs disabled:opacity-50"
+                className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs sm:text-sm shadow-md shadow-rose-600/20 flex items-center justify-center transition-all disabled:opacity-50 cursor-pointer"
               >
                 {processing ? "Rejecting..." : "Confirm Rejection"}
               </button>
             </div>
+          }
+        >
+          <div className="space-y-3 text-xs">
+            <label className="block font-bold text-slate-700">Rejection Reason *</label>
+            <textarea
+              rows={3}
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Enter specific reason for rejecting this leave application..."
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:bg-white resize-none"
+            />
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

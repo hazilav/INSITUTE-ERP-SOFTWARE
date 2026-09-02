@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Plus, ClipboardList, Clock, CheckCircle2, XCircle, X } from "lucide-react";
+import Modal from "@/components/Modal";
 
 interface MyLeavesClientProps {
   instituteName: string;
@@ -214,85 +215,85 @@ export default function MyLeavesClient({ instituteName, user }: MyLeavesClientPr
 
       {/* Request Leave Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 text-base">Request Leave Application</h3>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
+        <Modal
+          isOpen={true}
+          onClose={() => setShowModal(false)}
+          title="Request Leave Application"
+          subtitle="Submit an official leave request to administrative management"
+          icon={<ClipboardList className="w-5 h-5 text-brand-600" />}
+          maxWidth="md"
+          footer={
+            <div className="flex gap-3 w-full">
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-xs sm:text-sm transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitLeave}
+                disabled={submitting}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs sm:text-sm shadow-md shadow-brand-500/20 flex items-center justify-center transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {submitting ? "Submitting..." : "Submit Application"}
               </button>
             </div>
+          }
+        >
+          <div className="space-y-4 text-xs">
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Leave Type *</label>
+              <select
+                value={leaveType}
+                onChange={(e) => setLeaveType(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              >
+                <option value="Casual">Casual Leave</option>
+                <option value="Sick">Sick Leave</option>
+                <option value="Emergency">Emergency Leave</option>
+                <option value="Personal">Personal Leave</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
 
-            <form onSubmit={handleSubmitLeave} className="space-y-4 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Leave Type *</label>
-                <select
-                  value={leaveType}
-                  onChange={(e) => setLeaveType(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 font-medium text-slate-800 focus:outline-none"
-                >
-                  <option value="Casual">Casual Leave</option>
-                  <option value="Sick">Sick Leave</option>
-                  <option value="Emergency">Emergency Leave</option>
-                  <option value="Personal">Personal Leave</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Start Date *</label>
-                  <input
-                    type="date"
-                    required
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">End Date *</label>
-                  <input
-                    type="date"
-                    required
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Reason *</label>
-                <textarea
-                  rows={3}
+                <label className="block font-bold text-slate-700 mb-1">Start Date *</label>
+                <input
+                  type="date"
                   required
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  placeholder="Provide reason for leave request..."
-                  className="w-full p-3 rounded-xl border border-slate-200 text-slate-800 focus:outline-none"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold disabled:opacity-50"
-                >
-                  {submitting ? "Submitting..." : "Submit Application"}
-                </button>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">End Date *</label>
+                <input
+                  type="date"
+                  required
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
               </div>
-            </form>
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Reason *</label>
+              <textarea
+                rows={3}
+                required
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="Provide reason for leave request..."
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+              />
+            </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

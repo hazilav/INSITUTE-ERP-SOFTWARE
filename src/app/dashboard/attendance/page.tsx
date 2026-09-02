@@ -17,6 +17,7 @@ import {
   CalendarDays,
 } from "lucide-react";
 import MarkAttendanceModal from "@/components/MarkAttendanceModal";
+import Modal from "@/components/Modal";
 import ErrorState from "@/components/ErrorState";
 import { TableSkeleton } from "@/components/Skeleton";
 import { fetchWithRetry } from "@/lib/api-client";
@@ -446,73 +447,68 @@ export default function AttendancePage() {
 
       {/* Edit Attendance Record Modal */}
       {editingRecord && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-md w-full p-6 relative animate-in fade-in zoom-in-95 duration-200">
-            <button
-              onClick={() => setEditingRecord(null)}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+        <Modal
+          isOpen={true}
+          onClose={() => setEditingRecord(null)}
+          title="Edit Attendance Record"
+          subtitle={`Student: ${editingRecord.student.name} (${editingRecord.student.student_code})`}
+          icon={<Edit className="w-5 h-5 text-brand-600" />}
+          maxWidth="md"
+          footer={
+            <div className="flex gap-3 w-full">
+              <button
+                type="button"
+                onClick={() => setEditingRecord(null)}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-xs sm:text-sm transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleEditSave}
+                disabled={editLoading}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs sm:text-sm shadow-md shadow-brand-500/20 flex items-center justify-center transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {editLoading ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  "Save Changes"
+                )}
+              </button>
+            </div>
+          }
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                Attendance Status
+              </label>
+              <select
+                value={editStatus}
+                onChange={(e) => setEditStatus(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
+              >
+                <option value="Present">🟢 Present</option>
+                <option value="Absent">🔴 Absent</option>
+                <option value="Late">🟡 Late</option>
+                <option value="Leave">🔵 Leave</option>
+              </select>
+            </div>
 
-            <h3 className="text-xl font-bold text-slate-900 mb-1">Edit Attendance Record</h3>
-            <p className="text-xs text-slate-500 mb-4">
-              Student: <strong className="text-slate-800">{editingRecord.student.name}</strong> ({editingRecord.student.student_code})
-            </p>
-
-            <form onSubmit={handleEditSave} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Attendance Status
-                </label>
-                <select
-                  value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
-                >
-                  <option value="Present">🟢 Present</option>
-                  <option value="Absent">🔴 Absent</option>
-                  <option value="Late">🟡 Late</option>
-                  <option value="Leave">🔵 Leave</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Remarks / Reason
-                </label>
-                <input
-                  type="text"
-                  value={editRemarks}
-                  onChange={(e) => setEditRemarks(e.target.value)}
-                  placeholder="e.g. Medical leave approved"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setEditingRecord(null)}
-                  className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-sm transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={editLoading}
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-md shadow-brand-500/20 flex items-center justify-center transition-all disabled:opacity-50"
-                >
-                  {editLoading ? (
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    "Save Changes"
-                  )}
-                </button>
-              </div>
-            </form>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                Remarks / Reason
+              </label>
+              <input
+                type="text"
+                value={editRemarks}
+                onChange={(e) => setEditRemarks(e.target.value)}
+                placeholder="e.g. Medical leave approved"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
+              />
+            </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

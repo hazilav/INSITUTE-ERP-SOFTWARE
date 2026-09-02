@@ -17,6 +17,7 @@ import {
   X,
   FileCheck,
 } from "lucide-react";
+import Modal from "@/components/Modal";
 
 interface DocumentsClientProps {
   instituteName: string;
@@ -307,120 +308,118 @@ export default function DocumentsClient({ instituteName, students }: DocumentsCl
 
       {/* Upload Document Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                <UploadCloud className="w-5 h-5 text-brand-600" /> Upload Student Document
-              </h3>
-              <button onClick={() => setShowUploadModal(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
+        <Modal
+          isOpen={true}
+          onClose={() => setShowUploadModal(false)}
+          title="Upload Student Document"
+          subtitle="Archive digital documents, proofs, and certificates"
+          icon={<UploadCloud className="w-5 h-5 text-brand-600" />}
+          maxWidth="md"
+          footer={
+            <div className="flex gap-3 w-full">
+              <button
+                type="button"
+                onClick={() => setShowUploadModal(false)}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-xs sm:text-sm transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveDocument}
+                disabled={uploading || !fileUrl}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs sm:text-sm shadow-md shadow-brand-500/20 flex items-center justify-center transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {uploading ? "Uploading..." : "Save Document"}
               </button>
             </div>
+          }
+        >
+          <div className="space-y-4 text-xs">
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Select Student *</label>
+              <select
+                required
+                value={selectedStudentId}
+                onChange={(e) => setSelectedStudentId(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              >
+                <option value="">Choose Student</option>
+                {students.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.student_code})
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <form onSubmit={handleSaveDocument} className="space-y-3 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Select Student *</label>
+                <label className="block font-bold text-slate-700 mb-1">Document Type *</label>
                 <select
-                  required
-                  value={selectedStudentId}
-                  onChange={(e) => setSelectedStudentId(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800"
+                  value={documentType}
+                  onChange={(e) => setDocumentType(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                 >
-                  <option value="">Choose Student</option>
-                  {students.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({s.student_code})
-                    </option>
-                  ))}
+                  <option value="ID Proof">ID Proof</option>
+                  <option value="Passport">Passport</option>
+                  <option value="Photo">Photo</option>
+                  <option value="Education Certificate">Education Certificate</option>
+                  <option value="Application Form">Application Form</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Document Type *</label>
-                  <select
-                    value={documentType}
-                    onChange={(e) => setDocumentType(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800"
-                  >
-                    <option value="ID Proof">ID Proof</option>
-                    <option value="Passport">Passport</option>
-                    <option value="Photo">Photo</option>
-                    <option value="Education Certificate">Education Certificate</option>
-                    <option value="Application Form">Application Form</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Document Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={documentName}
-                    onChange={(e) => setDocumentName(e.target.value)}
-                    placeholder="e.g. Passport Copy"
-                    className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800"
-                  />
-                </div>
-              </div>
-
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Choose File (PDF, JPG, PNG, DOC) *</label>
-                <input
-                  type="file"
-                  required={!fileUrl}
-                  onChange={handleFileUpload}
-                  className="w-full p-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-xs"
-                />
-                {fileUrl && (
-                  <p className="text-[11px] text-emerald-600 font-bold mt-1">✓ File uploaded ready to save.</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Notes / Description</label>
+                <label className="block font-bold text-slate-700 mb-1">Document Name *</label>
                 <input
                   type="text"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Optional remarks..."
-                  className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800"
+                  required
+                  value={documentName}
+                  onChange={(e) => setDocumentName(e.target.value)}
+                  placeholder="e.g. Passport Copy"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
+            </div>
 
-              <div className="p-3 rounded-2xl bg-indigo-50/50 border border-indigo-100 flex items-center justify-between">
-                <div>
-                  <span className="font-bold text-indigo-900 block">Visible to Student</span>
-                  <span className="text-[11px] text-indigo-600">Student can view/download in portal</span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={visibleToStudent}
-                  onChange={(e) => setVisibleToStudent(e.target.checked)}
-                  className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500"
-                />
-              </div>
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Choose File (PDF, JPG, PNG, DOC) *</label>
+              <input
+                type="file"
+                required={!fileUrl}
+                onChange={handleFileUpload}
+                className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-xs"
+              />
+              {fileUrl && (
+                <p className="text-[11px] text-emerald-600 font-bold mt-1">✓ File uploaded ready to save.</p>
+              )}
+            </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowUploadModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={uploading || !fileUrl}
-                  className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold disabled:opacity-50"
-                >
-                  {uploading ? "Uploading..." : "Save Document"}
-                </button>
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Notes / Description</label>
+              <input
+                type="text"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Optional remarks..."
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+
+            <div className="p-3 rounded-2xl bg-indigo-50/50 border border-indigo-100 flex items-center justify-between">
+              <div>
+                <span className="font-bold text-indigo-900 block">Visible to Student</span>
+                <span className="text-[11px] text-indigo-600">Student can view/download in portal</span>
               </div>
-            </form>
+              <input
+                type="checkbox"
+                checked={visibleToStudent}
+                onChange={(e) => setVisibleToStudent(e.target.checked)}
+                className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 cursor-pointer"
+              />
+            </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

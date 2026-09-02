@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { DoorOpen, Plus, Trash2, Edit2, CheckCircle2, XCircle, X } from "lucide-react";
+import Modal from "@/components/Modal";
 
 interface RoomsClientProps {
   instituteName: string;
@@ -205,97 +206,95 @@ export default function RoomsClient({ instituteName }: RoomsClientProps) {
 
       {/* Add Room Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                <DoorOpen className="w-5 h-5 text-brand-600" /> Add Classroom
-              </h3>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
+        <Modal
+          isOpen={true}
+          onClose={() => setShowModal(false)}
+          title="Add Classroom"
+          subtitle="Configure room location, physical capacity, and availability"
+          icon={<DoorOpen className="w-5 h-5 text-brand-600" />}
+          maxWidth="md"
+          footer={
+            <div className="flex gap-3 w-full">
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-xs sm:text-sm transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleAddRoom}
+                disabled={submitting}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs sm:text-sm shadow-md shadow-brand-500/20 flex items-center justify-center transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {submitting ? "Saving..." : "Save Room"}
               </button>
             </div>
+          }
+        >
+          <div className="space-y-4 text-xs">
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Room Name *</label>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Computer Science Lab 1"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
+              />
+            </div>
 
-            <form onSubmit={handleAddRoom} className="space-y-3 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Room Name *</label>
+                <label className="block font-bold text-slate-700 mb-1">Room Number *</label>
                 <input
                   type="text"
                   required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Computer Science Lab 1"
-                  className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800"
+                  value={roomNumber}
+                  onChange={(e) => setRoomNumber(e.target.value)}
+                  placeholder="e.g. 201"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
                 />
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Room Number *</label>
-                  <input
-                    type="text"
-                    required
-                    value={roomNumber}
-                    onChange={(e) => setRoomNumber(e.target.value)}
-                    placeholder="e.g. 201"
-                    className="w-full p-2.5 rounded-xl border border-slate-200 font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Capacity *</label>
-                  <input
-                    type="number"
-                    required
-                    min={1}
-                    value={capacity}
-                    onChange={(e) => setCapacity(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 font-mono"
-                  />
-                </div>
-              </div>
-
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Location / Building</label>
+                <label className="block font-bold text-slate-700 mb-1">Capacity *</label>
                 <input
-                  type="text"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="e.g. Academic Block A, 2nd Floor"
-                  className="w-full p-2.5 rounded-xl border border-slate-200 text-slate-800"
+                  type="number"
+                  required
+                  min={1}
+                  value={capacity}
+                  onChange={(e) => setCapacity(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
                 />
               </div>
+            </div>
 
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Status</label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-800"
-                >
-                  <option value="Available">Available</option>
-                  <option value="Inactive">Inactive</option>
-                </select>
-              </div>
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Location / Building</label>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g. Academic Block A, 2nd Floor"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
+              />
+            </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold disabled:opacity-50"
-                >
-                  {submitting ? "Saving..." : "Save Room"}
-                </button>
-              </div>
-            </form>
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Status</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
+              >
+                <option value="Available">Available</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

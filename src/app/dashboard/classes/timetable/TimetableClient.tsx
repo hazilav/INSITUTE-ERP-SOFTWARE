@@ -21,6 +21,7 @@ import {
   ChevronLeft,
   ChevronRight,
   DoorOpen,
+  GraduationCap,
 } from "lucide-react";
 
 interface TimetableClientProps {
@@ -801,44 +802,18 @@ export default function TimetableClient({
 
       {/* Class Details Modal */}
       {selectedClass && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div>
-                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-brand-50 text-brand-700">
-                  {selectedClass.class_type === "physical" ? "Offline" : selectedClass.class_type === "live_online" ? "Online" : "Hybrid"}
-                </span>
-                <h3 className="font-bold text-slate-900 text-base mt-1">{selectedClass.title}</h3>
-              </div>
-              <button onClick={() => setSelectedClass(null)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-2 text-xs text-slate-700">
-              <p><strong>Course:</strong> {selectedClass.course?.name}</p>
-              <p><strong>Batch:</strong> {selectedClass.batch?.name}</p>
-              <p><strong>Mentor:</strong> {selectedClass.mentor?.name || "Unassigned"}</p>
-              <p><strong>Date & Time:</strong> {new Date(selectedClass.date).toLocaleDateString()} ({selectedClass.start_time} - {selectedClass.end_time})</p>
-              {selectedClass.roomItem && <p><strong>Room:</strong> {selectedClass.roomItem.name} ({selectedClass.roomItem.room_number})</p>}
-              {selectedClass.meeting_link && (
-                <p>
-                  <strong>Meeting URL:</strong>{" "}
-                  <a href={selectedClass.meeting_link} target="_blank" rel="noreferrer" className="text-brand-600 font-bold underline">
-                    Join {selectedClass.meeting_platform || "Online"}
-                  </a>
-                </p>
-              )}
-              {selectedClass.cancellation_reason && (
-                <p className="text-rose-600 font-bold"><strong>Cancellation Reason:</strong> {selectedClass.cancellation_reason}</p>
-              )}
-            </div>
-
-            {/* Quick Actions */}
-            <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+        <Modal
+          isOpen={true}
+          onClose={() => setSelectedClass(null)}
+          title={selectedClass.title}
+          subtitle={`${selectedClass.course?.name || ""} • ${selectedClass.batch?.name || ""}`}
+          icon={<GraduationCap className="w-5 h-5 text-brand-600" />}
+          maxWidth="md"
+          footer={
+            <div className="flex flex-wrap items-center justify-between gap-2 w-full">
               <Link
                 href={`/dashboard/attendance?batch=${selectedClass.batch_id}`}
-                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
+                className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
               >
                 Mark Attendance
               </Link>
@@ -852,21 +827,45 @@ export default function TimetableClient({
                       setRescheduleEndTime(selectedClass.end_time || "11:00 AM");
                       setShowRescheduleModal(true);
                     }}
-                    className="px-3 py-1.5 rounded-xl bg-amber-100 text-amber-800 font-bold text-xs"
+                    className="px-3 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold text-xs cursor-pointer"
                   >
                     Reschedule
                   </button>
                   <button
                     onClick={() => setShowCancelModal(true)}
-                    className="px-3 py-1.5 rounded-xl bg-rose-100 text-rose-800 font-bold text-xs"
+                    className="px-3 py-2 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold text-xs cursor-pointer"
                   >
-                    Cancel
+                    Cancel Class
                   </button>
                 </div>
               )}
             </div>
+          }
+        >
+          <div className="space-y-3 text-xs text-slate-700">
+            <div>
+              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-brand-50 text-brand-700">
+                {selectedClass.class_type === "physical" ? "Offline" : selectedClass.class_type === "live_online" ? "Online" : "Hybrid"}
+              </span>
+            </div>
+            <p><strong>Course:</strong> {selectedClass.course?.name}</p>
+            <p><strong>Batch:</strong> {selectedClass.batch?.name}</p>
+            <p><strong>Mentor:</strong> {selectedClass.mentor?.name || "Unassigned"}</p>
+            <p><strong>Date & Time:</strong> {new Date(selectedClass.date).toLocaleDateString()} ({selectedClass.start_time} - {selectedClass.end_time})</p>
+            {selectedClass.roomItem && <p><strong>Room:</strong> {selectedClass.roomItem.name} ({selectedClass.roomItem.room_number})</p>}
+            {selectedClass.meeting_link && (
+              <p>
+                <strong>Meeting URL:</strong>{" "}
+                <a href={selectedClass.meeting_link} target="_blank" rel="noreferrer" className="text-brand-600 font-bold underline">
+                  Join {selectedClass.meeting_platform || "Online"}
+                </a>
+              </p>
+            )}
+            {selectedClass.cancellation_reason && (
+              <p className="text-rose-600 font-bold"><strong>Cancellation Reason:</strong> {selectedClass.cancellation_reason}</p>
+            )}
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* Reschedule Modal */}

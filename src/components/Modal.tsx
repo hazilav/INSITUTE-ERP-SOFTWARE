@@ -41,9 +41,15 @@ export default function Modal({
       const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
 
+      // Reset scroll position immediately and on next frame to ensure first fields are visible
       if (contentRef.current) {
         contentRef.current.scrollTop = 0;
       }
+      const raf = requestAnimationFrame(() => {
+        if (contentRef.current) {
+          contentRef.current.scrollTop = 0;
+        }
+      });
 
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Escape") {
@@ -54,6 +60,7 @@ export default function Modal({
       window.addEventListener("keydown", handleKeyDown);
 
       return () => {
+        cancelAnimationFrame(raf);
         document.body.style.overflow = originalOverflow;
         window.removeEventListener("keydown", handleKeyDown);
       };
@@ -63,7 +70,7 @@ export default function Modal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-hidden">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-start justify-center sm:p-6 sm:pt-8 sm:pb-12">
       {/* Backdrop click dismiss */}
       <div
         onClick={onClose}
@@ -73,7 +80,7 @@ export default function Modal({
 
       {/* Modal Container Card */}
       <div
-        className={`relative z-10 bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 w-[calc(100vw-16px)] sm:w-full ${maxWidthClasses[maxWidth]} max-h-[calc(100dvh-16px)] sm:max-h-[90vh] flex flex-col overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200`}
+        className={`fixed inset-[12px] max-h-[calc(100vh-24px)] max-h-[calc(100dvh-24px)] sm:static sm:inset-auto sm:max-h-[calc(100vh-64px)] sm:max-h-[calc(100dvh-64px)] z-10 bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 sm:w-full ${maxWidthClasses[maxWidth]} flex flex-col overflow-hidden animate-in fade-in duration-200`}
         role="dialog"
         aria-modal="true"
       >
@@ -98,7 +105,7 @@ export default function Modal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 sm:p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center cursor-pointer"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -115,7 +122,7 @@ export default function Modal({
 
         {/* Sticky Footer */}
         {footer && (
-          <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-slate-100 shrink-0 bg-slate-50/50">
+          <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-slate-100 shrink-0 bg-slate-50/80">
             {footer}
           </div>
         )}

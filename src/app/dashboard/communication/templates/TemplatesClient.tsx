@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { MessageSquare, Plus, Edit, Trash2, Eye, Copy, CheckCircle2 } from "lucide-react";
+import Modal from "@/components/Modal";
 
 interface TemplateItem {
   id: string;
@@ -218,141 +219,146 @@ export default function TemplatesClient() {
 
       {/* Create / Edit Template Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
-            <h3 className="text-lg font-extrabold text-slate-900">
-              {editingTemplate ? "Edit Message Template" : "Create New Message Template"}
-            </h3>
+        <Modal
+          isOpen={true}
+          onClose={() => setShowModal(false)}
+          title={editingTemplate ? "Edit Message Template" : "Create New Message Template"}
+          subtitle="Configure message placeholders, category and delivery content"
+          icon={<MessageSquare className="w-5 h-5 text-brand-600" />}
+          maxWidth="lg"
+          footer={
+            <div className="flex gap-3 w-full">
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-xs sm:text-sm transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={loading}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs sm:text-sm shadow-md shadow-brand-500/20 flex items-center justify-center transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {loading ? "Saving..." : "Save Template"}
+              </button>
+            </div>
+          }
+        >
+          {error && (
+            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700">
+              {error}
+            </div>
+          )}
 
-            {error && (
-              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700">
-                {error}
-              </div>
-            )}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                Template Name *
+              </label>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Fee Reminder"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
+              />
+            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Template Name *
+                  Category
+                </label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
+                >
+                  <option value="Finance">Finance</option>
+                  <option value="Academic">Academic</option>
+                  <option value="Attendance">Attendance</option>
+                  <option value="Tasks">Tasks</option>
+                  <option value="System">System</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                  Subject Line
                 </label>
                 <input
                   type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Fee Reminder"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="e.g. Action Required"
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
                 />
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Category
-                  </label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
-                  >
-                    <option value="Finance">Finance</option>
-                    <option value="Academic">Academic</option>
-                    <option value="Attendance">Attendance</option>
-                    <option value="Tasks">Tasks</option>
-                    <option value="System">System</option>
-                  </select>
-                </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                Body Template *
+              </label>
+              <textarea
+                rows={4}
+                required
+                value={bodyTemplate}
+                onChange={(e) => setBodyTemplate(e.target.value)}
+                placeholder="Dear {{student_name}}, your fee payment of {{balance}} is due on {{due_date}}."
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
+              />
+            </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Subject Line
-                  </label>
-                  <input
-                    type="text"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    placeholder="e.g. Action Required"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Body Template *
-                </label>
-                <textarea
-                  rows={4}
-                  required
-                  value={bodyTemplate}
-                  onChange={(e) => setBodyTemplate(e.target.value)}
-                  placeholder="Dear {{student_name}}, your fee payment of {{balance}} is due on {{due_date}}."
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Placeholder Tags (Comma separated)
-                </label>
-                <input
-                  type="text"
-                  value={placeholders}
-                  onChange={(e) => setPlaceholders(e.target.value)}
-                  placeholder="student_name, balance, due_date"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-semibold text-xs hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs shadow-md"
-                >
-                  {loading ? "Saving..." : "Save Template"}
-                </button>
-              </div>
-            </form>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                Placeholder Tags (Comma separated)
+              </label>
+              <input
+                type="text"
+                value={placeholders}
+                onChange={(e) => setPlaceholders(e.target.value)}
+                placeholder="student_name, balance, due_date"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
+              />
+            </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* Live Preview Modal */}
       {previewTemplate && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
-            <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
-              <Eye className="w-5 h-5 text-brand-600" /> Template Live Output Preview
-            </h3>
-
+        <Modal
+          isOpen={true}
+          onClose={() => setPreviewTemplate(null)}
+          title="Template Live Output Preview"
+          subtitle={`${previewTemplate.name} (${previewTemplate.category})`}
+          icon={<Eye className="w-5 h-5 text-brand-600" />}
+          maxWidth="md"
+          footer={
+            <div className="flex justify-end w-full">
+              <button
+                type="button"
+                onClick={() => setPreviewTemplate(null)}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs shadow-xs cursor-pointer"
+              >
+                Close Preview
+              </button>
+            </div>
+          }
+        >
+          <div className="space-y-3">
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-              <span className="text-[11px] font-bold text-brand-600 uppercase">
-                {previewTemplate.name} ({previewTemplate.category})
-              </span>
               <p className="text-sm font-bold text-slate-900">{previewTemplate.subject || "No Subject"}</p>
               <div className="p-3 bg-white rounded-xl border border-slate-200 text-xs text-slate-800 leading-relaxed font-sans">
                 {renderPreviewOutput(previewTemplate)}
               </div>
             </div>
-
-            <div className="flex justify-end pt-2">
-              <button
-                onClick={() => setPreviewTemplate(null)}
-                className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs shadow-xs"
-              >
-                Close Preview
-              </button>
-            </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );
