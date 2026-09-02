@@ -147,6 +147,13 @@ export default function AdmissionsPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Breadcrumbs */}
+      <nav className="flex items-center gap-2 text-xs text-slate-400 font-medium">
+        <Link href="/dashboard" className="hover:text-slate-700">Dashboard</Link>
+        <ChevronRight className="w-3 h-3" />
+        <span className="text-indigo-600 font-bold">Admissions Desk</span>
+      </nav>
+
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gradient-to-r from-indigo-900 via-brand-900 to-slate-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl text-white shadow-xl relative overflow-hidden">
         <div className="relative z-10 space-y-1">
@@ -270,10 +277,10 @@ export default function AdmissionsPage() {
 
           <Link
             href="/dashboard/students"
-            className="text-xs font-bold text-slate-500 hover:text-brand-600 flex items-center gap-1 transition-colors"
+            className="text-xs font-semibold text-slate-400 hover:text-slate-700 flex items-center gap-1 transition-colors"
           >
-            <span>Open Student Data Center</span>
-            <ChevronRight className="w-4 h-4" />
+            <span>All Students Directory</span>
+            <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 

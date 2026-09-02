@@ -21,7 +21,6 @@ interface DashboardShellClientProps {
     phone?: string | null;
     email?: string | null;
     address?: string | null;
-    mode?: string;
   };
   children: React.ReactNode;
 }

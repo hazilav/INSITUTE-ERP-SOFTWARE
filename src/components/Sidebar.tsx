@@ -51,6 +51,7 @@ export default function Sidebar({
     !isAdmissions;
 
   const handleNavClick = () => {
+    // Only invoke onClose if mobile drawer is currently open to avoid cancelling Next.js desktop navigations
     if (isOpen) {
       onClose();
     }
@@ -109,13 +110,13 @@ export default function Sidebar({
                 key={item.name}
                 href={item.href}
                 onClick={handleNavClick}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer ${
                   item.active
                     ? "bg-brand-600 text-white shadow-md shadow-brand-600/20"
                     : "text-slate-300 hover:bg-slate-800 hover:text-white"
                 }`}
               >
-                <item.icon className="w-5 h-5" />
+                <item.icon className="w-5 h-5 shrink-0" />
                 <span>{item.name}</span>
               </Link>
             ))}
