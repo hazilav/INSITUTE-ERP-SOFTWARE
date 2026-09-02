@@ -17,6 +17,8 @@ import {
   CalendarDays,
 } from "lucide-react";
 import MarkAttendanceModal from "@/components/MarkAttendanceModal";
+import ErrorState from "@/components/ErrorState";
+import { fetchWithRetry } from "@/lib/api-client";
 
 interface AttendanceRecordItem {
   id: string;
@@ -61,11 +63,21 @@ export default function AttendancePage() {
 
   // Filters State
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [courseFilter, setCourseFilter] = useState("ALL");
   const [batchFilter, setBatchFilter] = useState("ALL");
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Debounce search input to avoid duplicate/rapid API requests
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   // Modals State
   const [markModalOpen, setMarkModalOpen] = useState(false);
@@ -76,30 +88,39 @@ export default function AttendancePage() {
 
   const fetchAttendance = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
       const params = new URLSearchParams();
-      if (search) params.set("search", search);
+      if (debouncedSearch) params.set("search", debouncedSearch);
       if (dateFilter) params.set("date", dateFilter);
       if (courseFilter !== "ALL") params.set("course_id", courseFilter);
       if (batchFilter !== "ALL") params.set("batch_id", batchFilter);
       if (typeFilter !== "ALL") params.set("class_type", typeFilter);
       if (statusFilter !== "ALL") params.set("status", statusFilter);
 
-      const res = await fetch(`/api/attendance?${params.toString()}`);
-      const data = await res.json();
+      const res = await fetchWithRetry<{
+        success: boolean;
+        records: AttendanceRecordItem[];
+        metrics: Metrics;
+        activeCourses: SelectOption[];
+        activeBatches: SelectOption[];
+      }>(`/api/attendance?${params.toString()}`);
 
-      if (res.ok && data.success) {
-        setRecords(data.records || []);
-        setMetrics(data.metrics || { percentage: "0.00%", present: 0, absent: 0, late: 0, leave: 0, totalToday: 0 });
-        setActiveCourses(data.activeCourses || []);
-        setActiveBatches(data.activeBatches || []);
+      if (res.ok && res.data?.success) {
+        setRecords(res.data.records || []);
+        setMetrics(res.data.metrics || { percentage: "0.00%", present: 0, absent: 0, late: 0, leave: 0, totalToday: 0 });
+        setActiveCourses(res.data.activeCourses || []);
+        setActiveBatches(res.data.activeBatches || []);
+      } else {
+        setFetchError(res.error || "Failed to load attendance records.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch attendance data", err);
+      setFetchError("Unable to load attendance records right now. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [search, dateFilter, courseFilter, batchFilter, typeFilter, statusFilter]);
+  }, [debouncedSearch, dateFilter, courseFilter, batchFilter, typeFilter, statusFilter]);
 
   useEffect(() => {
     fetchAttendance();
@@ -318,6 +339,13 @@ export default function AttendancePage() {
             <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
             <p className="text-xs font-medium">Loading attendance history...</p>
           </div>
+        ) : fetchError && records.length === 0 ? (
+          <ErrorState
+            title="Failed to load attendance"
+            message={fetchError}
+            onRetry={fetchAttendance}
+            className="border-none shadow-none my-0"
+          />
         ) : records.length === 0 ? (
           <div className="p-12 text-center space-y-4 max-w-md mx-auto">
             <div className="w-16 h-16 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center mx-auto shadow-sm">

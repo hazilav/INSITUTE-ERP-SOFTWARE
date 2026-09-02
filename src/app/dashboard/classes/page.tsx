@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/Modal";
 import Link from "next/link";
+import ErrorState from "@/components/ErrorState";
+import { fetchWithRetry } from "@/lib/api-client";
 import {
   GraduationCap,
   Plus,
@@ -65,11 +67,21 @@ export default function ClassesPage() {
 
   // Filters State
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [courseFilter, setCourseFilter] = useState("ALL");
   const [batchFilter, setBatchFilter] = useState("ALL");
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Debounce search input to avoid duplicate/rapid API requests
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   // Modal State
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -96,35 +108,46 @@ export default function ClassesPage() {
 
   const fetchClasses = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
       const params = new URLSearchParams();
-      if (search) params.set("search", search);
+      if (debouncedSearch) params.set("search", debouncedSearch);
       if (dateFilter) params.set("date", dateFilter);
       if (courseFilter !== "ALL") params.set("course_id", courseFilter);
       if (batchFilter !== "ALL") params.set("batch_id", batchFilter);
       if (typeFilter !== "ALL") params.set("class_type", typeFilter);
       if (statusFilter !== "ALL") params.set("status", statusFilter);
 
-      const res = await fetch(`/api/classes?${params.toString()}`);
-      const data = await res.json();
+      const res = await fetchWithRetry<{
+        success: boolean;
+        classes: ClassItem[];
+        metrics: any;
+        activeCourses: SelectOption[];
+        activeBatches: SelectOption[];
+        mentors: any[];
+        instituteMode?: string;
+      }>(`/api/classes?${params.toString()}`);
 
-      if (res.ok && data.success) {
-        setClasses(data.classes || []);
-        setMetrics(data.metrics || { today: 0, upcoming: 0, completed: 0 });
-        setActiveCourses(data.activeCourses || []);
-        setActiveBatches(data.activeBatches || []);
-        setMentors(data.mentors || []);
-        if (data.instituteMode) {
-          setInstituteMode(data.instituteMode);
-          if (data.instituteMode === "online") setClassType("live_online");
+      if (res.ok && res.data?.success) {
+        setClasses(res.data.classes || []);
+        setMetrics(res.data.metrics || { today: 0, upcoming: 0, completed: 0 });
+        setActiveCourses(res.data.activeCourses || []);
+        setActiveBatches(res.data.activeBatches || []);
+        setMentors(res.data.mentors || []);
+        if (res.data.instituteMode) {
+          setInstituteMode(res.data.instituteMode);
+          if (res.data.instituteMode === "online") setClassType("live_online");
         }
+      } else {
+        setFetchError(res.error || "Failed to load scheduled classes.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch classes", err);
+      setFetchError("Unable to load classes right now. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [search, dateFilter, courseFilter, batchFilter, typeFilter, statusFilter]);
+  }, [debouncedSearch, dateFilter, courseFilter, batchFilter, typeFilter, statusFilter]);
 
   useEffect(() => {
     fetchClasses();
@@ -456,6 +479,13 @@ export default function ClassesPage() {
             <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
             <p className="text-xs font-medium">Loading scheduled classes...</p>
           </div>
+        ) : fetchError && classes.length === 0 ? (
+          <ErrorState
+            title="Failed to load classes"
+            message={fetchError}
+            onRetry={fetchClasses}
+            className="border-none shadow-none my-0"
+          />
         ) : classes.length === 0 ? (
           <div className="p-12 text-center space-y-4 max-w-md mx-auto">
             <div className="w-16 h-16 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center mx-auto shadow-sm">

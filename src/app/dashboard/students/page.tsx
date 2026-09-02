@@ -30,7 +30,9 @@ import ArchiveStudentModal from "@/components/ArchiveStudentModal";
 import ResetPasswordModal from "@/components/ResetPasswordModal";
 import RowActionMenu, { ActionItem } from "@/components/RowActionMenu";
 import Toast from "@/components/Toast";
+import ErrorState from "@/components/ErrorState";
 import { getStudentPortalUrl, sharePortalLink } from "@/lib/urls";
+import { fetchWithRetry } from "@/lib/api-client";
 
 interface StudentRecord {
   id: string;
@@ -76,11 +78,21 @@ export default function StudentDataCenterPage() {
 
   // Filters & Active/Archived Tab State
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [modeFilter, setModeFilter] = useState("ALL");
   const [activeTab, setActiveTab] = useState<"ACTIVE" | "ARCHIVED">("ACTIVE");
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Debounce search input to avoid duplicate/rapid API requests
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   // Modals State
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -118,27 +130,35 @@ export default function StudentDataCenterPage() {
 
   const fetchStudents = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
       const params = new URLSearchParams();
-      if (search) params.set("search", search);
+      if (debouncedSearch) params.set("search", debouncedSearch);
       if (statusFilter !== "ALL") params.set("status", statusFilter);
       if (modeFilter !== "ALL") params.set("mode", modeFilter);
       params.set("archived", activeTab === "ARCHIVED" ? "true" : "false");
 
-      const res = await fetch(`/api/students?${params.toString()}`);
-      const data = await res.json();
+      const res = await fetchWithRetry<{
+        success: boolean;
+        students: StudentRecord[];
+        metrics: any;
+        suggestedCode?: string;
+      }>(`/api/students?${params.toString()}`);
 
-      if (res.ok && data.success) {
-        setStudents(data.students || []);
-        setMetrics(data.metrics || { total: 0, active: 0, onHold: 0, completed: 0, atRisk: 0 });
-        if (data.suggestedCode) setSuggestedCode(data.suggestedCode);
+      if (res.ok && res.data?.success) {
+        setStudents(res.data.students || []);
+        setMetrics(res.data.metrics || { total: 0, active: 0, onHold: 0, completed: 0, atRisk: 0 });
+        if (res.data.suggestedCode) setSuggestedCode(res.data.suggestedCode);
+      } else {
+        setFetchError(res.error || "Failed to load student records.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch student data:", err);
+      setFetchError("Unable to load students right now. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter, modeFilter, activeTab]);
+  }, [debouncedSearch, statusFilter, modeFilter, activeTab]);
 
   useEffect(() => {
     fetchStudents();
@@ -358,6 +378,13 @@ export default function StudentDataCenterPage() {
             <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
             <p className="text-xs font-medium">Loading student records...</p>
           </div>
+        ) : fetchError && students.length === 0 ? (
+          <ErrorState
+            title="Failed to load students"
+            message={fetchError}
+            onRetry={fetchStudents}
+            className="border-none shadow-none my-0"
+          />
         ) : students.length === 0 ? (
           <div className="p-12 text-center space-y-4 max-w-md mx-auto">
             <div className="w-16 h-16 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center mx-auto shadow-sm">

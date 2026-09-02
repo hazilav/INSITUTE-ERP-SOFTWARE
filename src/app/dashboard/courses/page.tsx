@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/Modal";
 import Link from "next/link";
+import ErrorState from "@/components/ErrorState";
+import { fetchWithRetry } from "@/lib/api-client";
 import {
   BookOpen,
   Layers,
@@ -47,7 +49,17 @@ export default function CoursesPage() {
 
   // Search & Filters
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Debounce search input to avoid duplicate/rapid API requests
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   // Modal states
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -65,28 +77,36 @@ export default function CoursesPage() {
 
   const fetchCourses = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
       const params = new URLSearchParams();
-      if (search) params.set("search", search);
+      if (debouncedSearch) params.set("search", debouncedSearch);
       if (statusFilter !== "ALL") params.set("status", statusFilter);
 
-      const res = await fetch(`/api/courses?${params.toString()}`);
-      const data = await res.json();
+      const res = await fetchWithRetry<{
+        success: boolean;
+        courses: CourseRecord[];
+        metrics: any;
+        instituteMode?: string;
+      }>(`/api/courses?${params.toString()}`);
 
-      if (res.ok && data.success) {
-        setCourses(data.courses || []);
-        setMetrics(data.metrics || { total: 0, active: 0, draft: 0, archived: 0 });
-        if (data.instituteMode) {
-          setInstituteMode(data.instituteMode);
-          setLearningMode(data.instituteMode);
+      if (res.ok && res.data?.success) {
+        setCourses(res.data.courses || []);
+        setMetrics(res.data.metrics || { total: 0, active: 0, draft: 0, archived: 0 });
+        if (res.data.instituteMode) {
+          setInstituteMode(res.data.instituteMode);
+          setLearningMode(res.data.instituteMode);
         }
+      } else {
+        setFetchError(res.error || "Failed to load courses.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch courses", err);
+      setFetchError("Unable to load courses right now. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter]);
+  }, [debouncedSearch, statusFilter]);
 
   useEffect(() => {
     fetchCourses();
@@ -328,6 +348,13 @@ export default function CoursesPage() {
             <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
             <p className="text-xs font-medium">Loading courses...</p>
           </div>
+        ) : fetchError && courses.length === 0 ? (
+          <ErrorState
+            title="Failed to load courses"
+            message={fetchError}
+            onRetry={fetchCourses}
+            className="border-none shadow-none my-0"
+          />
         ) : courses.length === 0 ? (
           <div className="p-12 text-center space-y-4 max-w-md mx-auto">
             <div className="w-16 h-16 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center mx-auto shadow-sm">

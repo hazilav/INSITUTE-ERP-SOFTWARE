@@ -21,7 +21,9 @@ import {
 import CreateFeePlanModal from "@/components/CreateFeePlanModal";
 import RecordPaymentModal from "@/components/RecordPaymentModal";
 import PaymentReceiptModal from "@/components/PaymentReceiptModal";
+import ErrorState from "@/components/ErrorState";
 import { formatCurrency } from "@/lib/currency";
+import { fetchWithRetry } from "@/lib/api-client";
 
 interface FeePlanItem {
   id: string;
@@ -112,9 +114,19 @@ export default function FeesPage() {
 
   // Filters State
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [courseFilter, setCourseFilter] = useState("ALL");
   const [batchFilter, setBatchFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Debounce search input to avoid duplicate/rapid API requests
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   // Modals State
   const [createPlanModalOpen, setCreatePlanModalOpen] = useState(false);
@@ -127,35 +139,47 @@ export default function FeesPage() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
       const params = new URLSearchParams();
-      if (search) params.set("search", search);
+      if (debouncedSearch) params.set("search", debouncedSearch);
       if (courseFilter !== "ALL") params.set("course_id", courseFilter);
       if (batchFilter !== "ALL") params.set("batch_id", batchFilter);
       if (statusFilter !== "ALL") params.set("status", statusFilter);
 
-      const res = await fetch(`/api/fees?${params.toString()}`);
-      const data = await res.json();
+      const res = await fetchWithRetry<{
+        success: boolean;
+        feePlans: FeePlanItem[];
+        metrics: Metrics;
+        activeCourses: SelectOption[];
+        activeBatches: SelectOption[];
+      }>(`/api/fees?${params.toString()}`);
 
-      if (res.ok && data.success) {
-        setFeePlans(data.feePlans || []);
-        setMetrics(data.metrics || { totalExpected: 0, totalCollected: 0, totalPending: 0, overdue: 0, dueSoon: 0 });
-        setActiveCourses(data.activeCourses || []);
-        setActiveBatches(data.activeBatches || []);
+      if (res.ok && res.data?.success) {
+        setFeePlans(res.data.feePlans || []);
+        setMetrics(res.data.metrics || { totalExpected: 0, totalCollected: 0, totalPending: 0, overdue: 0, dueSoon: 0 });
+        setActiveCourses(res.data.activeCourses || []);
+        setActiveBatches(res.data.activeBatches || []);
+      } else {
+        setFetchError(res.error || "Failed to load fee plans.");
       }
 
       // Fetch Recent Payments History
-      const payRes = await fetch("/api/fees/payments");
-      const payData = await payRes.json();
-      if (payRes.ok && payData.success) {
-        setRecentPayments(payData.payments || []);
+      const payRes = await fetchWithRetry<{
+        success: boolean;
+        payments: any[];
+      }>("/api/fees/payments");
+
+      if (payRes.ok && payRes.data?.success) {
+        setRecentPayments(payRes.data.payments || []);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch fees data", err);
+      setFetchError("Unable to load fee data right now. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [search, courseFilter, batchFilter, statusFilter]);
+  }, [debouncedSearch, courseFilter, batchFilter, statusFilter]);
 
   useEffect(() => {
     fetchData();
@@ -403,6 +427,13 @@ export default function FeesPage() {
             <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
             <p className="text-xs font-medium">Loading financial records...</p>
           </div>
+        ) : fetchError && feePlans.length === 0 ? (
+          <ErrorState
+            title="Failed to load fee records"
+            message={fetchError}
+            onRetry={fetchData}
+            className="border-none shadow-none my-0"
+          />
         ) : activeTab === "accounts" ? (
           feePlans.length === 0 ? (
             <div className="p-12 text-center space-y-4 max-w-md mx-auto">

@@ -19,6 +19,8 @@ import {
   Calendar,
 } from "lucide-react";
 import CreateActivityModal from "@/components/CreateActivityModal";
+import ErrorState from "@/components/ErrorState";
+import { fetchWithRetry } from "@/lib/api-client";
 
 interface ActivityItem {
   id: string;
@@ -67,10 +69,20 @@ export default function ActivitiesPage() {
 
   // Filters State
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [courseFilter, setCourseFilter] = useState("ALL");
   const [batchFilter, setBatchFilter] = useState("ALL");
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Debounce search input to avoid duplicate/rapid API requests
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   // Modals State
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -78,30 +90,40 @@ export default function ActivitiesPage() {
 
   const fetchActivities = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
       const params = new URLSearchParams();
-      if (search) params.set("search", search);
+      if (debouncedSearch) params.set("search", debouncedSearch);
       if (courseFilter !== "ALL") params.set("course_id", courseFilter);
       if (batchFilter !== "ALL") params.set("batch_id", batchFilter);
       if (typeFilter !== "ALL") params.set("activity_type", typeFilter);
       if (statusFilter !== "ALL") params.set("status", statusFilter);
 
-      const res = await fetch(`/api/activities?${params.toString()}`);
-      const data = await res.json();
+      const res = await fetchWithRetry<{
+        success: boolean;
+        activities: ActivityItem[];
+        metrics: any;
+        activeCourses: SelectOption[];
+        activeBatches: SelectOption[];
+        instituteMode?: string;
+      }>(`/api/activities?${params.toString()}`);
 
-      if (res.ok && data.success) {
-        setActivities(data.activities || []);
-        setMetrics(data.metrics || { total: 0, active: 0, pendingReview: 0, completed: 0, overdue: 0 });
-        setActiveCourses(data.activeCourses || []);
-        setActiveBatches(data.activeBatches || []);
-        setInstituteMode(data.instituteMode || "hybrid");
+      if (res.ok && res.data?.success) {
+        setActivities(res.data.activities || []);
+        setMetrics(res.data.metrics || { total: 0, active: 0, pendingReview: 0, completed: 0, overdue: 0 });
+        setActiveCourses(res.data.activeCourses || []);
+        setActiveBatches(res.data.activeBatches || []);
+        setInstituteMode(res.data.instituteMode || "hybrid");
+      } else {
+        setFetchError(res.error || "Failed to load activities.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch activities", err);
+      setFetchError("Unable to load activities right now. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [search, courseFilter, batchFilter, typeFilter, statusFilter]);
+  }, [debouncedSearch, courseFilter, batchFilter, typeFilter, statusFilter]);
 
   useEffect(() => {
     fetchActivities();
@@ -294,6 +316,13 @@ export default function ActivitiesPage() {
             <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
             <p className="text-xs font-medium">Loading activities...</p>
           </div>
+        ) : fetchError && activities.length === 0 ? (
+          <ErrorState
+            title="Failed to load activities"
+            message={fetchError}
+            onRetry={fetchActivities}
+            className="border-none shadow-none my-0"
+          />
         ) : activities.length === 0 ? (
           <div className="p-12 text-center space-y-4 max-w-md mx-auto">
             <div className="w-16 h-16 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center mx-auto shadow-sm">

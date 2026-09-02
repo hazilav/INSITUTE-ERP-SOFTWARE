@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/Modal";
 import Link from "next/link";
+import ErrorState from "@/components/ErrorState";
+import { fetchWithRetry } from "@/lib/api-client";
 import {
   Layers,
   BookOpen,
@@ -62,8 +64,18 @@ export default function BatchesPage() {
 
   // Filters
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [courseFilter, setCourseFilter] = useState("ALL");
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Debounce search input to avoid duplicate/rapid API requests
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   // Modal State
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -87,29 +99,37 @@ export default function BatchesPage() {
 
   const fetchBatches = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
       const params = new URLSearchParams();
-      if (search) params.set("search", search);
+      if (debouncedSearch) params.set("search", debouncedSearch);
       if (statusFilter !== "ALL") params.set("status", statusFilter);
       if (courseFilter !== "ALL") params.set("course_id", courseFilter);
 
-      const res = await fetch(`/api/batches?${params.toString()}`);
-      const data = await res.json();
+      const res = await fetchWithRetry<{
+        success: boolean;
+        batches: BatchRecord[];
+        metrics: Metrics;
+        activeCourses: CourseOption[];
+      }>(`/api/batches?${params.toString()}`);
 
-      if (res.ok && data.success) {
-        setBatches(data.batches || []);
-        setMetrics(data.metrics || { total: 0, active: 0, upcoming: 0, completed: 0 });
-        setActiveCourses(data.activeCourses || []);
-        if (data.activeCourses && data.activeCourses.length > 0 && !courseId) {
-          setCourseId(data.activeCourses[0].id);
+      if (res.ok && res.data?.success) {
+        setBatches(res.data.batches || []);
+        setMetrics(res.data.metrics || { total: 0, active: 0, upcoming: 0, completed: 0 });
+        setActiveCourses(res.data.activeCourses || []);
+        if (res.data.activeCourses && res.data.activeCourses.length > 0 && !courseId) {
+          setCourseId(res.data.activeCourses[0].id);
         }
+      } else {
+        setFetchError(res.error || "Failed to load batches.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch batches", err);
+      setFetchError("Unable to load batches right now. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter, courseFilter, courseId]);
+  }, [debouncedSearch, statusFilter, courseFilter, courseId]);
 
   useEffect(() => {
     fetchBatches();
@@ -395,6 +415,13 @@ export default function BatchesPage() {
             <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
             <p className="text-xs font-medium">Loading batches...</p>
           </div>
+        ) : fetchError && batches.length === 0 ? (
+          <ErrorState
+            title="Failed to load batches"
+            message={fetchError}
+            onRetry={fetchBatches}
+            className="border-none shadow-none my-0"
+          />
         ) : batches.length === 0 ? (
           <div className="p-12 text-center space-y-4 max-w-md mx-auto">
             <div className="w-16 h-16 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center mx-auto shadow-sm">

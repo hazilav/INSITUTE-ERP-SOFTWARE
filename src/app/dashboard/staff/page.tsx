@@ -24,7 +24,9 @@ import {
 } from "lucide-react";
 import CreateStaffModal from "@/components/CreateStaffModal";
 import Toast from "@/components/Toast";
+import ErrorState from "@/components/ErrorState";
 import { getStaffPortalUrl, getStudentPortalUrl, sharePortalLink } from "@/lib/urls";
+import { fetchWithRetry } from "@/lib/api-client";
 
 interface StaffItem {
   id: string;
@@ -74,9 +76,19 @@ export default function StaffPage() {
 
   // Filters State
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [deptFilter, setDeptFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Debounce search input to avoid duplicate/rapid API requests
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   // Modals State
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -87,26 +99,33 @@ export default function StaffPage() {
 
   const fetchStaff = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
       const params = new URLSearchParams();
-      if (search) params.set("search", search);
+      if (debouncedSearch) params.set("search", debouncedSearch);
       if (roleFilter !== "ALL") params.set("role", roleFilter);
       if (deptFilter !== "ALL") params.set("department", deptFilter);
       if (statusFilter !== "ALL") params.set("status", statusFilter);
 
-      const res = await fetch(`/api/staff?${params.toString()}`);
-      const data = await res.json();
+      const res = await fetchWithRetry<{
+        success: boolean;
+        staff: StaffItem[];
+        metrics: any;
+      }>(`/api/staff?${params.toString()}`);
 
-      if (res.ok && data.success) {
-        setStaffList(data.staff || []);
-        setMetrics(data.metrics || { total: 0, active: 0, mentors: 0, admins: 0, inactive: 0 });
+      if (res.ok && res.data?.success) {
+        setStaffList(res.data.staff || []);
+        setMetrics(res.data.metrics || { total: 0, active: 0, mentors: 0, admins: 0, inactive: 0 });
+      } else {
+        setFetchError(res.error || "Failed to load staff members.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch staff data", err);
+      setFetchError("Unable to load staff data right now. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [search, roleFilter, deptFilter, statusFilter]);
+  }, [debouncedSearch, roleFilter, deptFilter, statusFilter]);
 
   useEffect(() => {
     fetchStaff();
@@ -402,6 +421,13 @@ export default function StaffPage() {
             <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
             <p className="text-xs font-medium">Loading staff records...</p>
           </div>
+        ) : fetchError && staffList.length === 0 ? (
+          <ErrorState
+            title="Failed to load staff"
+            message={fetchError}
+            onRetry={fetchStaff}
+            className="border-none shadow-none my-0"
+          />
         ) : staffList.length === 0 ? (
           <div className="p-12 text-center space-y-4 max-w-md mx-auto">
             <div className="w-16 h-16 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center mx-auto shadow-sm">

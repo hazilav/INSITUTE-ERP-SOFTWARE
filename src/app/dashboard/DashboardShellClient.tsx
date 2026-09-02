@@ -4,6 +4,7 @@ import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import TopNav from "@/components/TopNav";
 import MobileNav from "@/components/MobileNav";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 interface DashboardShellClientProps {
   user: {
@@ -53,7 +54,9 @@ export default function DashboardShellClient({
 
         {/* Dynamic Page Content */}
         <main className="flex-1 p-3 sm:p-6 lg:p-8 pb-20 md:pb-8 max-w-7xl w-full mx-auto min-w-0">
-          {children}
+          <ErrorBoundary fallbackTitle="Something went wrong in this page">
+            {children}
+          </ErrorBoundary>
         </main>
       </div>
 

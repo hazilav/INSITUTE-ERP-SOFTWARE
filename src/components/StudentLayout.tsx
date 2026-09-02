@@ -20,6 +20,7 @@ import {
   Bell,
 } from "lucide-react";
 import NotificationBell from "./NotificationBell";
+import ErrorBoundary from "./ErrorBoundary";
 
 interface StudentLayoutProps {
   children: React.ReactNode;
@@ -208,7 +209,9 @@ export default function StudentLayout({
 
       {/* Main Content Body */}
       <main className="flex-1 lg:ml-64 p-3 sm:p-6 lg:p-8 pb-20 lg:pb-8 max-w-7xl mx-auto w-full min-w-0">
-        {children}
+        <ErrorBoundary fallbackTitle="Something went wrong in this section">
+          {children}
+        </ErrorBoundary>
       </main>
 
       {/* Mobile Bottom Navigation Bar */}

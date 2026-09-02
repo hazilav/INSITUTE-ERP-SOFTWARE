@@ -17,6 +17,8 @@ import {
   Clock,
   ExternalLink,
 } from "lucide-react";
+import ErrorState from "@/components/ErrorState";
+import { fetchWithRetry } from "@/lib/api-client";
 
 interface ContentItem {
   id: string;
@@ -45,8 +47,18 @@ export default function RecordedContentPage() {
 
   // Filters
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [courseFilter, setCourseFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Debounce search input to avoid duplicate/rapid API requests
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   // Modal State
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -66,29 +78,37 @@ export default function RecordedContentPage() {
 
   const fetchContents = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
       const params = new URLSearchParams();
-      if (search) params.set("search", search);
+      if (debouncedSearch) params.set("search", debouncedSearch);
       if (courseFilter !== "ALL") params.set("course_id", courseFilter);
       if (statusFilter !== "ALL") params.set("publish_status", statusFilter);
 
-      const res = await fetch(`/api/content?${params.toString()}`);
-      const data = await res.json();
+      const res = await fetchWithRetry<{
+        success: boolean;
+        contents: ContentItem[];
+        activeCourses: SelectOption[];
+        instituteMode?: string;
+      }>(`/api/content?${params.toString()}`);
 
-      if (res.ok && data.success) {
-        setContents(data.contents || []);
-        setActiveCourses(data.activeCourses || []);
-        setInstituteMode(data.instituteMode || "hybrid");
-        if (data.activeCourses && data.activeCourses.length > 0 && !courseId) {
-          setCourseId(data.activeCourses[0].id);
+      if (res.ok && res.data?.success) {
+        setContents(res.data.contents || []);
+        setActiveCourses(res.data.activeCourses || []);
+        setInstituteMode(res.data.instituteMode || "hybrid");
+        if (res.data.activeCourses && res.data.activeCourses.length > 0 && !courseId) {
+          setCourseId(res.data.activeCourses[0].id);
         }
+      } else {
+        setFetchError(res.error || "Failed to load content.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch content", err);
+      setFetchError("Unable to load recorded content right now. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [search, courseFilter, statusFilter, courseId]);
+  }, [debouncedSearch, courseFilter, statusFilter, courseId]);
 
   useEffect(() => {
     fetchContents();
@@ -276,6 +296,13 @@ export default function RecordedContentPage() {
             <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
             <p className="text-xs font-medium">Loading recorded content...</p>
           </div>
+        ) : fetchError && contents.length === 0 ? (
+          <ErrorState
+            title="Failed to load content"
+            message={fetchError}
+            onRetry={fetchContents}
+            className="border-none shadow-none my-0"
+          />
         ) : contents.length === 0 ? (
           <div className="p-12 text-center space-y-4 max-w-md mx-auto">
             <div className="w-16 h-16 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center mx-auto shadow-sm">

@@ -21,6 +21,7 @@ export default async function StudentPortalWrapper({
     <StudentLayout
       student={student}
       instituteName={institute.name}
+      instituteLogo={institute.logo}
       instituteMode={institute.institute_mode || "hybrid"}
     >
       {children}
