@@ -56,42 +56,58 @@ export async function GET(request: Request) {
       };
     }
 
-    const feePlans = await db.feePlan.findMany({
-      where: whereCondition,
-      include: {
-        student: {
-          select: {
-            id: true,
-            student_code: true,
-            name: true,
-            phone: true,
-            email: true,
-            photo: true,
+    // Execute feePlans list, financial metrics scan, active courses, and batches in parallel
+    const [feePlans, allInstitutePlans, activeCourses, activeBatches] = await Promise.all([
+      db.feePlan.findMany({
+        where: whereCondition,
+        include: {
+          student: {
+            select: {
+              id: true,
+              student_code: true,
+              name: true,
+              phone: true,
+              email: true,
+              photo: true,
+            },
+          },
+          course: { select: { id: true, name: true, code: true } },
+          batch: { select: { id: true, name: true, code: true } },
+          installments: {
+            orderBy: { due_date: "asc" },
+          },
+          payments: {
+            orderBy: { payment_date: "desc" },
+            take: 5,
           },
         },
-        course: { select: { id: true, name: true, code: true } },
-        batch: { select: { id: true, name: true, code: true } },
-        installments: {
-          orderBy: { due_date: "asc" },
+        orderBy: { created_at: "desc" },
+        take: 100,
+      }),
+      db.feePlan.findMany({
+        where: { institute_id: institute.id },
+        select: {
+          final_fee: true,
+          amount_paid: true,
+          balance: true,
+          installments: {
+            where: { status: { in: ["Pending", "Overdue"] } },
+            select: { due_date: true, status: true },
+            orderBy: { due_date: "asc" },
+          },
         },
-        payments: {
-          orderBy: { payment_date: "desc" },
-          take: 5,
-        },
-      },
-      orderBy: { created_at: "desc" },
-    });
-
-    // Compute Overall Institute Financial Metrics
-    const allInstitutePlans = await db.feePlan.findMany({
-      where: { institute_id: institute.id },
-      include: {
-        installments: {
-          where: { status: { in: ["Pending", "Overdue"] } },
-          orderBy: { due_date: "asc" },
-        },
-      },
-    });
+      }),
+      db.course.findMany({
+        where: { institute_id: institute.id, is_archived: false },
+        select: { id: true, name: true, code: true },
+        orderBy: { name: "asc" },
+      }),
+      db.batch.findMany({
+        where: { institute_id: institute.id, is_archived: false },
+        select: { id: true, name: true, code: true },
+        orderBy: { name: "asc" },
+      }),
+    ]);
 
     const now = new Date();
     const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -118,18 +134,6 @@ export async function GET(request: Request) {
           dueSoonCount++;
         }
       });
-    });
-
-    const activeCourses = await db.course.findMany({
-      where: { institute_id: institute.id, is_archived: false },
-      select: { id: true, name: true, code: true },
-      orderBy: { name: "asc" },
-    });
-
-    const activeBatches = await db.batch.findMany({
-      where: { institute_id: institute.id, is_archived: false },
-      select: { id: true, name: true, code: true },
-      orderBy: { name: "asc" },
     });
 
     return NextResponse.json({

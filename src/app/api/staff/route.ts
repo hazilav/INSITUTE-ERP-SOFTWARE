@@ -45,43 +45,48 @@ export async function GET(request: Request) {
       ];
     }
 
-    const staffProfiles = await db.staffProfile.findMany({
-      where: whereCondition,
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            status: true,
-            last_login: true,
+    // Execute staff profiles query and metric counts in parallel
+    const [
+      staffProfiles,
+      totalStaff,
+      activeStaff,
+      mentorsCount,
+      adminsCount,
+      inactiveStaff,
+    ] = await Promise.all([
+      db.staffProfile.findMany({
+        where: whereCondition,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              status: true,
+              last_login: true,
+            },
           },
+          assigned_course: { select: { id: true, name: true, code: true } },
+          assigned_batch: { select: { id: true, name: true } },
         },
-        assigned_course: { select: { id: true, name: true, code: true } },
-        assigned_batch: { select: { id: true, name: true } },
-      },
-      orderBy: { created_at: "desc" },
-    });
-
-    // Compute Staff Metrics
-    const totalStaff = await db.staffProfile.count({
-      where: { institute_id: institute.id },
-    });
-
-    const activeStaff = await db.staffProfile.count({
-      where: { institute_id: institute.id, status: "Active" },
-    });
-
-    const mentorsCount = await db.staffProfile.count({
-      where: { institute_id: institute.id, role: "MENTOR" },
-    });
-
-    const adminsCount = await db.staffProfile.count({
-      where: { institute_id: institute.id, role: "ADMIN" },
-    });
-
-    const inactiveStaff = await db.staffProfile.count({
-      where: { institute_id: institute.id, status: { in: ["Inactive", "Resigned"] } },
-    });
+        orderBy: { created_at: "desc" },
+        take: 100,
+      }),
+      db.staffProfile.count({
+        where: { institute_id: institute.id },
+      }),
+      db.staffProfile.count({
+        where: { institute_id: institute.id, status: "Active" },
+      }),
+      db.staffProfile.count({
+        where: { institute_id: institute.id, role: "MENTOR" },
+      }),
+      db.staffProfile.count({
+        where: { institute_id: institute.id, role: "ADMIN" },
+      }),
+      db.staffProfile.count({
+        where: { institute_id: institute.id, status: { in: ["Inactive", "Resigned"] } },
+      }),
+    ]);
 
     return NextResponse.json({
       success: true,

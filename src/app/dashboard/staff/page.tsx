@@ -22,11 +22,14 @@ import {
   Check,
   KeyRound,
 } from "lucide-react";
-import CreateStaffModal from "@/components/CreateStaffModal";
+import dynamic from "next/dynamic";
 import Toast from "@/components/Toast";
 import ErrorState from "@/components/ErrorState";
+import { TableSkeleton } from "@/components/Skeleton";
 import { getStaffPortalUrl, getStudentPortalUrl, sharePortalLink } from "@/lib/urls";
 import { fetchWithRetry } from "@/lib/api-client";
+
+const CreateStaffModal = dynamic(() => import("@/components/CreateStaffModal"), { ssr: false });
 
 interface StaffItem {
   id: string;
@@ -417,9 +420,8 @@ export default function StaffPage() {
       {/* Staff List Table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-slate-400 space-y-3">
-            <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-xs font-medium">Loading staff records...</p>
+          <div className="p-6">
+            <TableSkeleton rows={8} />
           </div>
         ) : fetchError && staffList.length === 0 ? (
           <ErrorState

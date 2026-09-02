@@ -84,39 +84,59 @@ export async function GET(request: Request) {
       ];
     }
 
-    const students = await db.student.findMany({
-      where: whereCondition,
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            status: true,
-            must_change_password: true,
-            updated_at: true,
-          },
-        },
-        course: { select: { id: true, name: true, code: true } },
-        batch: { select: { id: true, name: true, code: true } },
-      },
-      orderBy: { created_at: "desc" },
-    });
+    // Pagination parameters
+    const pageParam = searchParams.get("page");
+    const limitParam = searchParams.get("limit");
+    const isAll = limitParam === "ALL";
+    const page = Math.max(1, parseInt(pageParam || "1", 10) || 1);
+    const limit = isAll ? 500 : Math.min(100, Math.max(10, parseInt(limitParam || "50", 10) || 50));
+    const skip = isAll ? 0 : (page - 1) * limit;
 
-    const allInstituteStudents = await db.student.findMany({
-      where: { institute_id: institute.id, is_archived: false },
-      select: { status: true },
-    });
+    // Run query, metrics grouping, and total count in parallel
+    const [students, statusGroups, totalMatching, totalInstitute] = await Promise.all([
+      db.student.findMany({
+        where: whereCondition,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              status: true,
+              must_change_password: true,
+              updated_at: true,
+            },
+          },
+          course: { select: { id: true, name: true, code: true } },
+          batch: { select: { id: true, name: true, code: true } },
+        },
+        orderBy: { created_at: "desc" },
+        take: limit,
+        skip,
+      }),
+      db.student.groupBy({
+        by: ["status"],
+        where: { institute_id: institute.id, is_archived: false },
+        _count: { status: true },
+      }),
+      db.student.count({ where: whereCondition }),
+      db.student.count({ where: { institute_id: institute.id, is_archived: false } }),
+    ]);
+
+    const statusMap = statusGroups.reduce((acc: Record<string, number>, g) => {
+      acc[g.status] = g._count.status;
+      return acc;
+    }, {});
 
     const metrics = {
-      total: allInstituteStudents.length,
-      active: allInstituteStudents.filter((s) => s.status === "ACTIVE").length,
-      onHold: allInstituteStudents.filter((s) => s.status === "ON_HOLD").length,
-      completed: allInstituteStudents.filter((s) => s.status === "COMPLETED").length,
-      atRisk: allInstituteStudents.filter((s) => s.status === "DROPPED").length,
+      total: totalInstitute,
+      active: statusMap["ACTIVE"] || 0,
+      onHold: statusMap["ON_HOLD"] || 0,
+      completed: statusMap["COMPLETED"] || 0,
+      atRisk: statusMap["DROPPED"] || 0,
     };
 
     const year = new Date().getFullYear();
-    const count = allInstituteStudents.length + 1;
+    const count = totalInstitute + 1;
     const padded = String(count).padStart(5, "0");
     const suggestedCode = `INS-${year}-${padded}`;
 
@@ -125,6 +145,12 @@ export async function GET(request: Request) {
       students,
       metrics,
       suggestedCode,
+      pagination: {
+        page,
+        limit,
+        total: totalMatching,
+        totalPages: Math.max(1, Math.ceil(totalMatching / limit)),
+      },
     });
   } catch (error) {
     console.error("GET Students API Error:", error);

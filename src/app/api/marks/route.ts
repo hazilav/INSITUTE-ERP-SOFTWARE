@@ -52,63 +52,68 @@ export async function GET(request: Request) {
       ];
     }
 
-    const assessments = await db.assessment.findMany({
-      where: whereCondition,
-      include: {
-        course: { select: { id: true, name: true, code: true } },
-        batch: { select: { id: true, name: true, code: true } },
-        mentor: { select: { id: true, name: true } },
-        results: {
-          select: {
-            id: true,
-            obtained_marks: true,
-            percentage: true,
-            is_pass: true,
-            result_status: true,
+    // Execute assessments list, metrics, courses, and batches in parallel
+    const [
+      assessments,
+      allResults,
+      totalAssessments,
+      completedAssessments,
+      pendingEvaluations,
+      activeCourses,
+      activeBatches,
+    ] = await Promise.all([
+      db.assessment.findMany({
+        where: whereCondition,
+        include: {
+          course: { select: { id: true, name: true, code: true } },
+          batch: { select: { id: true, name: true, code: true } },
+          mentor: { select: { id: true, name: true } },
+          results: {
+            select: {
+              id: true,
+              obtained_marks: true,
+              percentage: true,
+              is_pass: true,
+              result_status: true,
+            },
+          },
+          _count: {
+            select: { results: true },
           },
         },
-        _count: {
-          select: { results: true },
-        },
-      },
-      orderBy: [{ assessment_date: "desc" }, { created_at: "desc" }],
-    });
-
-    // Compute Overall Institute Academic Metrics
-    const allResults = await db.assessmentResult.findMany({
-      where: { institute_id: institute.id },
-      select: { percentage: true, is_pass: true, result_status: true },
-    });
-
-    const totalAssessments = await db.assessment.count({
-      where: { institute_id: institute.id },
-    });
-
-    const completedAssessments = await db.assessment.count({
-      where: { institute_id: institute.id, status: "Completed" },
-    });
-
-    const pendingEvaluations = await db.assessment.count({
-      where: { institute_id: institute.id, status: { in: ["Scheduled", "Evaluation Pending"] } },
-    });
+        orderBy: [{ assessment_date: "desc" }, { created_at: "desc" }],
+        take: 100,
+      }),
+      db.assessmentResult.findMany({
+        where: { institute_id: institute.id },
+        select: { percentage: true, is_pass: true, result_status: true },
+      }),
+      db.assessment.count({
+        where: { institute_id: institute.id },
+      }),
+      db.assessment.count({
+        where: { institute_id: institute.id, status: "Completed" },
+      }),
+      db.assessment.count({
+        where: { institute_id: institute.id, status: { in: ["Scheduled", "Evaluation Pending"] } },
+      }),
+      db.course.findMany({
+        where: { institute_id: institute.id, is_archived: false },
+        select: { id: true, name: true, code: true },
+        orderBy: { name: "asc" },
+      }),
+      db.batch.findMany({
+        where: { institute_id: institute.id, is_archived: false },
+        select: { id: true, name: true, code: true },
+        orderBy: { name: "asc" },
+      }),
+    ]);
 
     const totalPctSum = allResults.reduce((acc, r) => acc + r.percentage, 0);
     const avgPercentage =
       allResults.length > 0 ? (totalPctSum / allResults.length).toFixed(2) + "%" : "0.00%";
 
     const studentsNeedingAttention = allResults.filter((r) => !r.is_pass || r.percentage < 50.0).length;
-
-    const activeCourses = await db.course.findMany({
-      where: { institute_id: institute.id, is_archived: false },
-      select: { id: true, name: true, code: true },
-      orderBy: { name: "asc" },
-    });
-
-    const activeBatches = await db.batch.findMany({
-      where: { institute_id: institute.id, is_archived: false },
-      select: { id: true, name: true, code: true },
-      orderBy: { name: "asc" },
-    });
 
     return NextResponse.json({
       success: true,

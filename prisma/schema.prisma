@@ -238,6 +238,9 @@ model Class {
   attendance_records AttendanceRecord[]
   audit_history      ClassAuditHistory[]
 
+  @@index([institute_id, date])
+  @@index([institute_id, batch_id])
+  @@index([institute_id, mentor_id])
   @@map("classes")
 }
 
@@ -299,6 +302,10 @@ model Student {
   certificates         Certificate[]
 
   @@unique([institute_id, student_code])
+  @@index([institute_id, is_archived, status])
+  @@index([institute_id, course_id])
+  @@index([institute_id, batch_id])
+  @@index([institute_id, created_at])
   @@map("students")
 }
 
@@ -339,6 +346,10 @@ model AttendanceRecord {
   marked_by User?     @relation("MarkedAttendance", fields: [marked_by_id], references: [id], onDelete: SetNull)
 
   @@unique([institute_id, student_id, class_id])
+  @@index([institute_id, date])
+  @@index([institute_id, student_id])
+  @@index([institute_id, course_id, batch_id])
+  @@index([class_id])
   @@map("attendance_records")
 }
 
@@ -368,6 +379,7 @@ model Activity {
   submissions ActivitySubmission[]
   classes     Class[]
 
+  @@index([institute_id, batch_id, status])
   @@map("activities")
 }
 
@@ -396,6 +408,8 @@ model ActivitySubmission {
   reviewed_by User?     @relation("ReviewedSubmissions", fields: [reviewed_by_id], references: [id], onDelete: SetNull)
 
   @@unique([institute_id, activity_id, student_id])
+  @@index([institute_id, student_id])
+  @@index([activity_id])
   @@map("activity_submissions")
 }
 
@@ -426,6 +440,7 @@ model Assessment {
   finalized_by User?              @relation("FinalizedAssessments", fields: [finalized_by_id], references: [id], onDelete: SetNull)
   results      AssessmentResult[]
 
+  @@index([institute_id, batch_id])
   @@map("assessments")
 }
 
@@ -451,6 +466,8 @@ model AssessmentResult {
   evaluated_by User?      @relation("EvaluatedResults", fields: [evaluated_by_id], references: [id], onDelete: SetNull)
 
   @@unique([institute_id, assessment_id, student_id])
+  @@index([institute_id, student_id])
+  @@index([assessment_id])
   @@map("assessment_results")
 }
 
@@ -478,6 +495,8 @@ model FeePlan {
   installments Installment[]
   payments     Payment[]
 
+  @@index([institute_id, student_id])
+  @@index([institute_id, status])
   @@map("fee_plans")
 }
 
@@ -496,6 +515,8 @@ model Installment {
   fee_plan  FeePlan   @relation(fields: [fee_plan_id], references: [id], onDelete: Cascade)
   payments  Payment[]
 
+  @@index([institute_id, due_date])
+  @@index([fee_plan_id])
   @@map("installments")
 }
 
@@ -522,6 +543,8 @@ model Payment {
   recorded_by User?        @relation("RecordedPayments", fields: [recorded_by_id], references: [id], onDelete: SetNull)
 
   @@unique([institute_id, receipt_number])
+  @@index([institute_id, student_id])
+  @@index([institute_id, payment_date])
   @@map("payments")
 }
 
@@ -555,6 +578,7 @@ model StaffProfile {
   leave_requests  LeaveRequest[]
 
   @@unique([institute_id, employee_id])
+  @@index([institute_id, user_id])
   @@map("staff_profiles")
 }
 
@@ -592,6 +616,8 @@ model StudentTask {
   institute Institute @relation(fields: [institute_id], references: [id], onDelete: Cascade)
   student   Student   @relation(fields: [student_id], references: [id], onDelete: Cascade)
 
+  @@index([institute_id, student_id])
+  @@index([institute_id, status])
   @@map("student_tasks")
 }
 

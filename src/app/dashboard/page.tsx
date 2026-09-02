@@ -36,31 +36,37 @@ export default async function DashboardPage() {
 
   // Section 11: STAFF / MENTOR DAILY WORK DASHBOARD
   if (isStaffOrMentor) {
-    const todayClasses = await db.class.findMany({
-      where: {
-        institute_id: institute.id,
-        date: { gte: todayStart, lte: todayEnd },
-        ...(user.role === "MENTOR" ? { mentor_id: user.id } : {}),
-      },
-      include: {
-        course: { select: { name: true } },
-        batch: { select: { name: true } },
-      },
-      orderBy: { date: "asc" },
-    });
-
-    const myPendingTasks = await db.studentTask.findMany({
-      where: {
-        institute_id: institute.id,
-        status: { in: ["Pending", "In Progress"] },
-      },
-      orderBy: { due_date: "asc" },
-      take: 5,
-    });
-
-    const staffProfile = await db.staffProfile.findFirst({
-      where: { institute_id: institute.id, user_id: user.id },
-    });
+    const [todayClasses, myPendingTasks, staffProfile, pendingActivitiesCount] = await Promise.all([
+      db.class.findMany({
+        where: {
+          institute_id: institute.id,
+          date: { gte: todayStart, lte: todayEnd },
+          ...(user.role === "MENTOR" ? { mentor_id: user.id } : {}),
+        },
+        include: {
+          course: { select: { name: true } },
+          batch: { select: { name: true } },
+        },
+        orderBy: { date: "asc" },
+      }),
+      db.studentTask.findMany({
+        where: {
+          institute_id: institute.id,
+          status: { in: ["Pending", "In Progress"] },
+        },
+        orderBy: { due_date: "asc" },
+        take: 5,
+      }),
+      db.staffProfile.findFirst({
+        where: { institute_id: institute.id, user_id: user.id },
+      }),
+      db.activity.count({
+        where: {
+          institute_id: institute.id,
+          ...(user.role === "MENTOR" ? { mentor_id: user.id } : {}),
+        },
+      }),
+    ]);
 
     const todayStaffAttendance = staffProfile
       ? await db.staffAttendance.findFirst({
@@ -71,13 +77,6 @@ export default async function DashboardPage() {
           },
         })
       : null;
-
-    const pendingActivitiesCount = await db.activity.count({
-      where: {
-        institute_id: institute.id,
-        ...(user.role === "MENTOR" ? { mentor_id: user.id } : {}),
-      },
-    });
 
     return (
       <div className="space-y-8 animate-in fade-in duration-300">
@@ -213,18 +212,56 @@ export default async function DashboardPage() {
     );
   }
 
-  // Section 5: OWNER / ADMIN UNCROWDED DASHBOARD
-  const totalStudents = await db.student.count({
-    where: { institute_id: institute.id, is_archived: false },
-  });
-
-  const todayAttendanceRecords = await db.attendanceRecord.findMany({
-    where: {
-      institute_id: institute.id,
-      date: { gte: todayStart, lte: todayEnd },
-    },
-    select: { status: true },
-  });
+  // Section 5: OWNER / ADMIN UNCROWDED DASHBOARD - Run independent queries in parallel
+  const [
+    totalStudents,
+    todayAttendanceRecords,
+    feeAggregate,
+    pendingTasksCount,
+    todaysClasses,
+    studentsSample,
+  ] = await Promise.all([
+    db.student.count({
+      where: { institute_id: institute.id, is_archived: false },
+    }),
+    db.attendanceRecord.findMany({
+      where: {
+        institute_id: institute.id,
+        date: { gte: todayStart, lte: todayEnd },
+      },
+      select: { status: true },
+    }),
+    db.feePlan.aggregate({
+      where: { institute_id: institute.id },
+      _sum: { balance: true },
+    }),
+    db.studentTask.count({
+      where: { institute_id: institute.id, status: { in: ["Pending", "In Progress"] } },
+    }),
+    db.class.findMany({
+      where: {
+        institute_id: institute.id,
+        date: { gte: todayStart, lte: todayEnd },
+      },
+      include: {
+        batch: { select: { name: true } },
+        mentor: { select: { name: true } },
+      },
+      orderBy: { start_time: "asc" },
+    }),
+    db.student.findMany({
+      where: { institute_id: institute.id, is_archived: false },
+      select: {
+        id: true,
+        attendance_records: {
+          select: { status: true },
+          take: 30,
+          orderBy: { date: "desc" },
+        },
+      },
+      take: 150,
+    }),
+  ]);
 
   const presentToday = todayAttendanceRecords.filter((r) => r.status === "Present").length;
   const lateToday = todayAttendanceRecords.filter((r) => r.status === "Late").length;
@@ -232,37 +269,10 @@ export default async function DashboardPage() {
   const todayDenom = presentToday + lateToday + absentToday;
   const todayPercentage = todayDenom > 0 ? (((presentToday + lateToday) / todayDenom) * 100).toFixed(0) + "%" : "86%";
 
-  const allFeePlans = await db.feePlan.findMany({
-    where: { institute_id: institute.id },
-    select: { balance: true },
-  });
-  const totalPendingFees = allFeePlans.reduce((acc, p) => acc + p.balance, 0);
-
-  const pendingTasksCount = await db.studentTask.count({
-    where: { institute_id: institute.id, status: { in: ["Pending", "In Progress"] } },
-  });
-
-  // Today's Classes Query
-  const todaysClasses = await db.class.findMany({
-    where: {
-      institute_id: institute.id,
-      date: { gte: todayStart, lte: todayEnd },
-    },
-    include: {
-      batch: { select: { name: true } },
-      mentor: { select: { name: true } },
-    },
-    orderBy: { start_time: "asc" },
-  });
-
-  // Needs Attention Counts
-  const allStudents = await db.student.findMany({
-    where: { institute_id: institute.id, is_archived: false },
-    include: { attendance_records: { select: { status: true } } },
-  });
+  const totalPendingFees = feeAggregate._sum.balance || 0;
 
   let lowAttendanceCount = 0;
-  allStudents.forEach((st) => {
+  studentsSample.forEach((st) => {
     const p = st.attendance_records.filter((r) => r.status === "Present").length;
     const l = st.attendance_records.filter((r) => r.status === "Late").length;
     const a = st.attendance_records.filter((r) => r.status === "Absent").length;

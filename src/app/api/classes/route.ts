@@ -60,16 +60,6 @@ export async function GET(request: Request) {
       ];
     }
 
-    const classes = await db.class.findMany({
-      where: whereCondition,
-      include: {
-        course: { select: { id: true, name: true, code: true } },
-        batch: { select: { id: true, name: true, code: true } },
-        mentor: { select: { id: true, name: true, role: true } },
-      },
-      orderBy: [{ date: "asc" }, { start_time: "asc" }],
-    });
-
     // Compute Metrics based on Date
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -81,36 +71,51 @@ export async function GET(request: Request) {
       if (s?.batch_id) baseMetricsWhere.batch_id = s.batch_id;
     }
 
-    const todayCount = await db.class.count({
-      where: { ...baseMetricsWhere, date: { gte: todayStart, lte: todayEnd } },
-    });
-
-    const upcomingCount = await db.class.count({
-      where: { ...baseMetricsWhere, date: { gt: todayEnd }, status: { in: ["Scheduled", "Live"] } },
-    });
-
-    const completedCount = await db.class.count({
-      where: { ...baseMetricsWhere, status: "Completed" },
-    });
-
-    // Fetch active courses, batches, and mentors for filters & forms
-    const activeCourses = await db.course.findMany({
-      where: { institute_id: institute.id, is_archived: false },
-      select: { id: true, name: true, code: true },
-      orderBy: { name: "asc" },
-    });
-
-    const activeBatches = await db.batch.findMany({
-      where: { institute_id: institute.id, is_archived: false },
-      select: { id: true, name: true, code: true, course_id: true },
-      orderBy: { name: "asc" },
-    });
-
-    const mentors = await db.user.findMany({
-      where: { institute_id: institute.id, role: { in: ["OWNER", "ADMIN", "STAFF", "MENTOR"] } },
-      select: { id: true, name: true, role: true },
-      orderBy: { name: "asc" },
-    });
+    // Execute class list, metric counts, and filter options in parallel
+    const [
+      classes,
+      todayCount,
+      upcomingCount,
+      completedCount,
+      activeCourses,
+      activeBatches,
+      mentors,
+    ] = await Promise.all([
+      db.class.findMany({
+        where: whereCondition,
+        include: {
+          course: { select: { id: true, name: true, code: true } },
+          batch: { select: { id: true, name: true, code: true } },
+          mentor: { select: { id: true, name: true, role: true } },
+        },
+        orderBy: [{ date: "asc" }, { start_time: "asc" }],
+        take: 100,
+      }),
+      db.class.count({
+        where: { ...baseMetricsWhere, date: { gte: todayStart, lte: todayEnd } },
+      }),
+      db.class.count({
+        where: { ...baseMetricsWhere, date: { gt: todayEnd }, status: { in: ["Scheduled", "Live"] } },
+      }),
+      db.class.count({
+        where: { ...baseMetricsWhere, status: "Completed" },
+      }),
+      db.course.findMany({
+        where: { institute_id: institute.id, is_archived: false },
+        select: { id: true, name: true, code: true },
+        orderBy: { name: "asc" },
+      }),
+      db.batch.findMany({
+        where: { institute_id: institute.id, is_archived: false },
+        select: { id: true, name: true, code: true, course_id: true },
+        orderBy: { name: "asc" },
+      }),
+      db.user.findMany({
+        where: { institute_id: institute.id, role: { in: ["OWNER", "ADMIN", "STAFF", "MENTOR"] } },
+        select: { id: true, name: true, role: true },
+        orderBy: { name: "asc" },
+      }),
+    ]);
 
     return NextResponse.json({
       success: true,

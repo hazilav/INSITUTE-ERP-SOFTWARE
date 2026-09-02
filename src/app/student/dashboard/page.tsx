@@ -26,12 +26,82 @@ export default async function StudentDashboardPage() {
 
   const { student, institute } = studentContext;
 
-  // 1. Attendance % Calculation
-  const attendanceRecords = await db.attendanceRecord.findMany({
-    where: { institute_id: institute.id, student_id: student.id },
-    select: { status: true },
-  });
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+  const tomorrowStart = new Date(todayEnd.getTime() + 1000);
 
+  // Execute all independent student dashboard queries in parallel
+  const [
+    attendanceRecords,
+    batchActivities,
+    assessmentAggregate,
+    feePlan,
+    todaysClasses,
+    upcomingClasses,
+  ] = await Promise.all([
+    // 1. Attendance Records
+    db.attendanceRecord.findMany({
+      where: { institute_id: institute.id, student_id: student.id },
+      select: { status: true },
+    }),
+
+    // 2. Pending Activities
+    student.batch_id
+      ? db.activity.findMany({
+          where: {
+            institute_id: institute.id,
+            batch_id: student.batch_id,
+            status: "Published",
+          },
+          include: {
+            submissions: { where: { student_id: student.id }, select: { status: true } },
+          },
+        })
+      : Promise.resolve([]),
+
+    // 3. Academic Average Aggregate
+    db.assessmentResult.aggregate({
+      where: { institute_id: institute.id, student_id: student.id },
+      _avg: { percentage: true },
+    }),
+
+    // 4. Fee Plan
+    db.feePlan.findFirst({
+      where: { institute_id: institute.id, student_id: student.id },
+      select: { balance: true },
+    }),
+
+    // 5. Today's Classes
+    student.batch_id
+      ? db.class.findMany({
+          where: {
+            institute_id: institute.id,
+            batch_id: student.batch_id,
+            date: { gte: todayStart, lte: todayEnd },
+          },
+          include: { mentor: { select: { name: true } } },
+          orderBy: { start_time: "asc" },
+        })
+      : Promise.resolve([]),
+
+    // 6. Upcoming Classes
+    student.batch_id
+      ? db.class.findMany({
+          where: {
+            institute_id: institute.id,
+            batch_id: student.batch_id,
+            date: { gte: tomorrowStart },
+            status: "Scheduled",
+          },
+          include: { mentor: { select: { name: true } } },
+          orderBy: { date: "asc" },
+          take: 5,
+        })
+      : Promise.resolve([]),
+  ]);
+
+  // Attendance % Calculation
   const presentCount = attendanceRecords.filter((r) => r.status === "Present").length;
   const lateCount = attendanceRecords.filter((r) => r.status === "Late").length;
   const absentCount = attendanceRecords.filter((r) => r.status === "Absent").length;
@@ -42,76 +112,19 @@ export default async function StudentDashboardPage() {
       ? (((presentCount + lateCount) / totalAttendanceDenom) * 100).toFixed(0) + "%"
       : "—";
 
-  // 2. Pending Activities Count
-  let pendingActivitiesCount = 0;
-  if (student.batch_id) {
-    const batchActivities = await db.activity.findMany({
-      where: {
-        institute_id: institute.id,
-        batch_id: student.batch_id,
-        status: "Published",
-      },
-      include: {
-        submissions: { where: { student_id: student.id } },
-      },
-    });
+  // Pending Activities Count
+  const pendingActivitiesCount = batchActivities.filter(
+    (a) => a.submissions.length === 0 || a.submissions[0].status === "Needs Revision"
+  ).length;
 
-    pendingActivitiesCount = batchActivities.filter(
-      (a) => a.submissions.length === 0 || a.submissions[0].status === "Needs Revision"
-    ).length;
-  }
-
-  // 3. Academic Performance Average %
-  const assessmentResults = await db.assessmentResult.findMany({
-    where: { institute_id: institute.id, student_id: student.id },
-    select: { percentage: true },
-  });
-
-  const totalPctSum = assessmentResults.reduce((acc, r) => acc + r.percentage, 0);
+  // Academic Performance Average %
   const avgAcademicPct =
-    assessmentResults.length > 0
-      ? (totalPctSum / assessmentResults.length).toFixed(0) + "%"
+    assessmentAggregate._avg.percentage != null
+      ? assessmentAggregate._avg.percentage.toFixed(0) + "%"
       : "—";
 
-  // 4. Fee Balance Due
-  const feePlan = await db.feePlan.findFirst({
-    where: { institute_id: institute.id, student_id: student.id },
-  });
-
+  // Fee Balance Due
   const feeBalanceDue = feePlan ? `${formatCurrency(feePlan.balance)} Due` : "—";
-
-  // 5. Today's Classes for Student Batch
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-
-  let todaysClasses: any[] = [];
-  let upcomingClasses: any[] = [];
-
-  if (student.batch_id) {
-    todaysClasses = await db.class.findMany({
-      where: {
-        institute_id: institute.id,
-        batch_id: student.batch_id,
-        date: { gte: todayStart, lte: todayEnd },
-      },
-      include: { mentor: { select: { name: true } } },
-      orderBy: { start_time: "asc" },
-    });
-
-    const tomorrowStart = new Date(todayEnd.getTime() + 1000);
-    upcomingClasses = await db.class.findMany({
-      where: {
-        institute_id: institute.id,
-        batch_id: student.batch_id,
-        date: { gte: tomorrowStart },
-        status: "Scheduled",
-      },
-      include: { mentor: { select: { name: true } } },
-      orderBy: { date: "asc" },
-      take: 5,
-    });
-  }
 
   const getModeBadge = (mode: string) => {
     switch (mode) {

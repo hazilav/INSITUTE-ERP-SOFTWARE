@@ -61,20 +61,7 @@ export async function GET(request: Request) {
       ];
     }
 
-    const records = await db.attendanceRecord.findMany({
-      where: whereCondition,
-      include: {
-        student: { select: { id: true, student_code: true, name: true, phone: true } },
-        course: { select: { id: true, name: true, code: true } },
-        batch: { select: { id: true, name: true, code: true } },
-        classItem: { select: { id: true, title: true, class_type: true, room: true, meeting_link: true } },
-        marked_by: { select: { id: true, name: true } },
-      },
-      orderBy: [{ date: "desc" }, { created_at: "desc" }],
-      take: 100,
-    });
-
-    // Compute Today's Attendance Metrics
+    // Compute Today's Attendance Metrics date range
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
@@ -89,10 +76,35 @@ export async function GET(request: Request) {
       if (s) baseTodayWhere.student_id = s.id;
     }
 
-    const todayRecords = await db.attendanceRecord.findMany({
-      where: baseTodayWhere,
-      select: { status: true },
-    });
+    // Execute records, today metrics, active courses, and batches in parallel
+    const [records, todayRecords, activeCourses, activeBatches] = await Promise.all([
+      db.attendanceRecord.findMany({
+        where: whereCondition,
+        include: {
+          student: { select: { id: true, student_code: true, name: true, phone: true } },
+          course: { select: { id: true, name: true, code: true } },
+          batch: { select: { id: true, name: true, code: true } },
+          classItem: { select: { id: true, title: true, class_type: true, room: true, meeting_link: true } },
+          marked_by: { select: { id: true, name: true } },
+        },
+        orderBy: [{ date: "desc" }, { created_at: "desc" }],
+        take: 100,
+      }),
+      db.attendanceRecord.findMany({
+        where: baseTodayWhere,
+        select: { status: true },
+      }),
+      db.course.findMany({
+        where: { institute_id: institute.id, is_archived: false },
+        select: { id: true, name: true, code: true },
+        orderBy: { name: "asc" },
+      }),
+      db.batch.findMany({
+        where: { institute_id: institute.id, is_archived: false },
+        select: { id: true, name: true, code: true },
+        orderBy: { name: "asc" },
+      }),
+    ]);
 
     const presentCount = todayRecords.filter((r) => r.status === "Present").length;
     const lateCount = todayRecords.filter((r) => r.status === "Late").length;
@@ -102,18 +114,6 @@ export async function GET(request: Request) {
     const denominator = presentCount + lateCount + absentCount; // Leave is excluded from denominator
     const attendancePercentage =
       denominator > 0 ? (((presentCount + lateCount) / denominator) * 100).toFixed(2) : "0.00";
-
-    const activeCourses = await db.course.findMany({
-      where: { institute_id: institute.id, is_archived: false },
-      select: { id: true, name: true, code: true },
-      orderBy: { name: "asc" },
-    });
-
-    const activeBatches = await db.batch.findMany({
-      where: { institute_id: institute.id, is_archived: false },
-      select: { id: true, name: true, code: true },
-      orderBy: { name: "asc" },
-    });
 
     return NextResponse.json({
       success: true,

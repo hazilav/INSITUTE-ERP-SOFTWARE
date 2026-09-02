@@ -53,34 +53,48 @@ export async function GET(request: Request) {
       ];
     }
 
-    const activities = await db.activity.findMany({
-      where: whereCondition,
-      include: {
-        course: { select: { id: true, name: true, code: true } },
-        batch: { select: { id: true, name: true, code: true } },
-        mentor: { select: { id: true, name: true } },
-        submissions: {
-          select: {
-            id: true,
-            status: true,
-            submitted_at: true,
-            obtained_marks: true,
+    // Execute activities list, metrics, courses, and batches in parallel
+    const [activities, allInstituteActivities, activeCourses, activeBatches] = await Promise.all([
+      db.activity.findMany({
+        where: whereCondition,
+        include: {
+          course: { select: { id: true, name: true, code: true } },
+          batch: { select: { id: true, name: true, code: true } },
+          mentor: { select: { id: true, name: true } },
+          submissions: {
+            select: {
+              id: true,
+              status: true,
+              submitted_at: true,
+              obtained_marks: true,
+            },
+          },
+          _count: {
+            select: { submissions: true },
           },
         },
-        _count: {
-          select: { submissions: true },
+        orderBy: [{ due_date: "asc" }, { created_at: "desc" }],
+        take: 100,
+      }),
+      db.activity.findMany({
+        where: { institute_id: institute.id },
+        select: {
+          due_date: true,
+          status: true,
+          submissions: { select: { status: true } },
         },
-      },
-      orderBy: [{ due_date: "asc" }, { created_at: "desc" }],
-    });
-
-    // Compute Metrics for Institute
-    const allInstituteActivities = await db.activity.findMany({
-      where: { institute_id: institute.id },
-      include: {
-        submissions: { select: { status: true } },
-      },
-    });
+      }),
+      db.course.findMany({
+        where: { institute_id: institute.id, is_archived: false },
+        select: { id: true, name: true, code: true },
+        orderBy: { name: "asc" },
+      }),
+      db.batch.findMany({
+        where: { institute_id: institute.id, is_archived: false },
+        select: { id: true, name: true, code: true },
+        orderBy: { name: "asc" },
+      }),
+    ]);
 
     const now = new Date();
     const totalCount = allInstituteActivities.length;
@@ -97,18 +111,6 @@ export async function GET(request: Request) {
           pendingReviewCount++;
         }
       });
-    });
-
-    const activeCourses = await db.course.findMany({
-      where: { institute_id: institute.id, is_archived: false },
-      select: { id: true, name: true, code: true },
-      orderBy: { name: "asc" },
-    });
-
-    const activeBatches = await db.batch.findMany({
-      where: { institute_id: institute.id, is_archived: false },
-      select: { id: true, name: true, code: true },
-      orderBy: { name: "asc" },
     });
 
     return NextResponse.json({

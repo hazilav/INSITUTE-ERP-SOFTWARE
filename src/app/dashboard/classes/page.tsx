@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/Modal";
 import Link from "next/link";
 import ErrorState from "@/components/ErrorState";
+import { TableSkeleton } from "@/components/Skeleton";
 import { fetchWithRetry } from "@/lib/api-client";
 import {
   GraduationCap,
@@ -475,9 +476,8 @@ export default function ClassesPage() {
       {/* Class List Table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-slate-400 space-y-3">
-            <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-xs font-medium">Loading scheduled classes...</p>
+          <div className="p-6">
+            <TableSkeleton rows={8} />
           </div>
         ) : fetchError && classes.length === 0 ? (
           <ErrorState

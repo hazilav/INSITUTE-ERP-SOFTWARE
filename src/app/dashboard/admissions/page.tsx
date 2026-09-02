@@ -20,9 +20,12 @@ import {
   Mail,
   Calendar,
 } from "lucide-react";
-import AddStudentModal from "@/components/AddStudentModal";
+import dynamic from "next/dynamic";
 import ErrorState from "@/components/ErrorState";
+import { TableSkeleton } from "@/components/Skeleton";
 import { fetchWithRetry } from "@/lib/api-client";
+
+const AddStudentModal = dynamic(() => import("@/components/AddStudentModal"), { ssr: false });
 
 interface StudentRecord {
   id: string;
@@ -326,9 +329,8 @@ export default function AdmissionsPage() {
       {/* Admissions Records Table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-slate-400 space-y-3">
-            <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-xs font-medium">Loading admissions records...</p>
+          <div className="p-6">
+            <TableSkeleton rows={8} />
           </div>
         ) : fetchError && students.length === 0 ? (
           <ErrorState

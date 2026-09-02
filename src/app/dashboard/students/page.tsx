@@ -25,15 +25,19 @@ import {
   UserX,
   UserPlus,
 } from "lucide-react";
-import AddStudentModal from "@/components/AddStudentModal";
-import EditStudentModal from "@/components/EditStudentModal";
-import ArchiveStudentModal from "@/components/ArchiveStudentModal";
-import ResetPasswordModal from "@/components/ResetPasswordModal";
+import dynamic from "next/dynamic";
 import RowActionMenu, { ActionItem } from "@/components/RowActionMenu";
 import Toast from "@/components/Toast";
 import ErrorState from "@/components/ErrorState";
+import { TableSkeleton } from "@/components/Skeleton";
 import { getStudentPortalUrl, sharePortalLink } from "@/lib/urls";
 import { fetchWithRetry } from "@/lib/api-client";
+
+// Lazy-load heavy modals to minimize initial bundle size
+const AddStudentModal = dynamic(() => import("@/components/AddStudentModal"), { ssr: false });
+const EditStudentModal = dynamic(() => import("@/components/EditStudentModal"), { ssr: false });
+const ArchiveStudentModal = dynamic(() => import("@/components/ArchiveStudentModal"), { ssr: false });
+const ResetPasswordModal = dynamic(() => import("@/components/ResetPasswordModal"), { ssr: false });
 
 interface StudentRecord {
   id: string;
@@ -86,11 +90,14 @@ export default function StudentDataCenterPage() {
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Debounce search input to avoid duplicate/rapid API requests
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
+      setPage(1);
     }, 250);
     return () => clearTimeout(timer);
   }, [search]);
@@ -148,18 +155,24 @@ export default function StudentDataCenterPage() {
       if (statusFilter !== "ALL") params.set("status", statusFilter);
       if (modeFilter !== "ALL") params.set("mode", modeFilter);
       params.set("archived", activeTab === "ARCHIVED" ? "true" : "false");
+      params.set("page", String(page));
+      params.set("limit", "50");
 
       const res = await fetchWithRetry<{
         success: boolean;
         students: StudentRecord[];
         metrics: any;
         suggestedCode?: string;
+        pagination?: { page: number; limit: number; total: number; totalPages: number };
       }>(`/api/students?${params.toString()}`);
 
       if (res.ok && res.data?.success) {
         setStudents(res.data.students || []);
         setMetrics(res.data.metrics || { total: 0, active: 0, onHold: 0, completed: 0, atRisk: 0 });
         if (res.data.suggestedCode) setSuggestedCode(res.data.suggestedCode);
+        if (res.data.pagination) {
+          setTotalPages(res.data.pagination.totalPages || 1);
+        }
       } else {
         setFetchError(res.error || "Failed to load student records.");
       }
@@ -169,7 +182,7 @@ export default function StudentDataCenterPage() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, statusFilter, modeFilter, activeTab]);
+  }, [debouncedSearch, statusFilter, modeFilter, activeTab, page]);
 
   useEffect(() => {
     fetchStudents();
@@ -393,9 +406,8 @@ export default function StudentDataCenterPage() {
       {/* Student Data Table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-slate-400 space-y-3">
-            <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-xs font-medium">Loading student records...</p>
+          <div className="p-6">
+            <TableSkeleton rows={8} />
           </div>
         ) : fetchError && students.length === 0 ? (
           <ErrorState
@@ -675,6 +687,34 @@ export default function StudentDataCenterPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-100 bg-slate-50/50 text-xs text-slate-500">
+              <p>
+                Showing page <span className="font-bold text-slate-800">{page}</span> of{" "}
+                <span className="font-bold text-slate-800">{totalPages}</span>
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white font-semibold text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition-all shadow-2xs"
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white font-semibold text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition-all shadow-2xs"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
       </div>
