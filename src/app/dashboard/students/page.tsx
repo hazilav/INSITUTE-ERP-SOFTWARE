@@ -25,6 +25,7 @@ import {
   UserX,
   UserPlus,
 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import RowActionMenu, { ActionItem } from "@/components/RowActionMenu";
 import Toast from "@/components/Toast";
@@ -102,15 +103,15 @@ export default function StudentDataCenterPage() {
     return () => clearTimeout(timer);
   }, [search]);
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   // Handle legacy tab=admissions query parameter gracefully by redirecting to dedicated Admissions Desk
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get("tab") === "admissions") {
-        window.location.replace("/dashboard/admissions");
-      }
+    if (searchParams?.get("tab") === "admissions") {
+      router.replace("/dashboard/admissions");
     }
-  }, []);
+  }, [searchParams, router]);
 
   // Modals State
   const [addModalOpen, setAddModalOpen] = useState(false);

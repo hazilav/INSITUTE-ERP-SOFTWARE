@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Sidebar from "@/components/Sidebar";
 import TopNav from "@/components/TopNav";
 import MobileNav from "@/components/MobileNav";
@@ -35,13 +35,15 @@ export default function DashboardShellClient({
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col lg:flex-row">
       {/* Sidebar Navigation */}
-      <Sidebar
-        instituteName={institute.name}
-        logo={institute.logo}
-        role={user.role}
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
+      <Suspense fallback={null}>
+        <Sidebar
+          instituteName={institute.name}
+          logo={institute.logo}
+          role={user.role}
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
+      </Suspense>
 
       {/* Main Content Area */}
       <div className="flex-1 lg:pl-64 flex flex-col min-h-screen min-w-0 w-full">

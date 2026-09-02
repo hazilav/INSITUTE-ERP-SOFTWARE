@@ -389,14 +389,14 @@ export default function AdmissionsPage() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-100 to-indigo-200 text-indigo-700 font-bold flex items-center justify-center text-xs shadow-xs uppercase">
-                            {student.name.charAt(0)}
+                            {(student.name || "S").charAt(0)}
                           </div>
                           <div>
                             <p className="font-bold text-slate-900 leading-tight">
-                              {student.name}
+                              {student.name || "Student"}
                             </p>
                             <p className="text-[11px] font-mono text-slate-400 mt-0.5">
-                              {student.student_code}
+                              {student.student_code || "—"}
                             </p>
                           </div>
                         </div>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
@@ -42,6 +42,11 @@ export default function Sidebar({
   instituteMode = "hybrid",
 }: SidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams?.get("tab");
+  const isAdmissions = pathname.startsWith("/dashboard/admissions") || (pathname === "/dashboard/students" && tabParam === "admissions");
+  const isStudents = (pathname === "/dashboard/students" || (pathname.startsWith("/dashboard/students/") && !pathname.startsWith("/dashboard/students/documents") && !pathname.startsWith("/dashboard/students/certificates"))) && !isAdmissions;
+
   const [academicsOpen, setAcademicsOpen] = useState(pathname.startsWith("/dashboard/courses") || pathname.startsWith("/dashboard/batches") || pathname.startsWith("/dashboard/classes") || pathname.startsWith("/dashboard/activities") || pathname.startsWith("/dashboard/marks"));
 
   const isStaffOrMentor = role === "STAFF" || role === "MENTOR";
@@ -166,10 +171,10 @@ export default function Sidebar({
             href="/dashboard/admissions"
             onClick={onClose}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${
-              pathname.startsWith("/dashboard/admissions") ? "bg-brand-600 text-white shadow-md shadow-brand-600/20" : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              isAdmissions ? "bg-brand-600 text-white shadow-md shadow-brand-600/20 font-bold" : "text-slate-300 hover:bg-slate-800 hover:text-white"
             }`}
           >
-            <UserPlus className="w-5 h-5 text-indigo-400" />
+            <UserPlus className={`w-5 h-5 ${isAdmissions ? "text-white" : "text-indigo-400"}`} />
             <span>Admissions</span>
           </Link>
 
@@ -177,8 +182,8 @@ export default function Sidebar({
             href="/dashboard/students"
             onClick={onClose}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${
-              (pathname === "/dashboard/students" || (pathname.startsWith("/dashboard/students/") && !pathname.startsWith("/dashboard/students/documents") && !pathname.startsWith("/dashboard/students/certificates")))
-                ? "bg-brand-600 text-white shadow-md shadow-brand-600/20"
+              isStudents
+                ? "bg-brand-600 text-white shadow-md shadow-brand-600/20 font-bold"
                 : "text-slate-300 hover:bg-slate-800 hover:text-white"
             }`}
           >
