@@ -185,8 +185,20 @@ export async function POST(request: Request) {
     const mode = ["offline", "online", "hybrid"].includes(learning_mode)
       ? learning_mode
       : institute.institute_mode || "hybrid";
-    const studentStatus = ["ACTIVE", "ON_HOLD", "COMPLETED", "DROPPED"].includes(status)
-      ? status
+
+    // Support admission_status mapping (ENROLLED -> ACTIVE, INQUIRY -> ON_HOLD)
+    const rawStatus = body.admission_status || status;
+    const mappedStatus =
+      rawStatus === "INQUIRY"
+        ? "ON_HOLD"
+        : rawStatus === "ENROLLED"
+        ? "ACTIVE"
+        : rawStatus === "SUSPENDED"
+        ? "DROPPED"
+        : rawStatus;
+
+    const studentStatus = ["ACTIVE", "ON_HOLD", "COMPLETED", "DROPPED"].includes(mappedStatus)
+      ? mappedStatus
       : "ACTIVE";
 
     let validCourseId = null;

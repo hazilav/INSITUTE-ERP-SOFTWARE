@@ -148,7 +148,7 @@ export default function MobileNav({ role }: MobileNavProps) {
   ];
 
   const ownerMoreItems = [
-    { name: "Admissions", href: "/dashboard/students?tab=admissions", icon: UserPlus },
+    { name: "Admissions", href: "/dashboard/admissions", icon: UserPlus },
     { name: "Courses", href: "/dashboard/courses", icon: BookOpen },
     { name: "Batches", href: "/dashboard/batches", icon: Layers },
     { name: "Classes", href: "/dashboard/classes", icon: GraduationCap },

@@ -32,7 +32,7 @@ export default function QuickAddDropdown() {
 
   const options = [
     { label: "+ Add Student", action: () => setAddStudentOpen(true), icon: UserPlus, color: "text-brand-600" },
-    { label: "+ Add Enquiry", href: "/dashboard/students?tab=admissions", icon: UserPlus, color: "text-indigo-600" },
+    { label: "+ Add Enquiry", href: "/dashboard/admissions", icon: UserPlus, color: "text-indigo-600" },
     { label: "+ Add Course", href: "/dashboard/courses", icon: BookOpen, color: "text-blue-600" },
     { label: "+ Add Batch", href: "/dashboard/batches", icon: Layers, color: "text-purple-600" },
     { label: "+ Add Class", href: "/dashboard/classes", icon: GraduationCap, color: "text-emerald-600" },

@@ -23,6 +23,7 @@ import {
   Lock,
   Link2,
   UserX,
+  UserPlus,
 } from "lucide-react";
 import AddStudentModal from "@/components/AddStudentModal";
 import EditStudentModal from "@/components/EditStudentModal";
@@ -93,6 +94,16 @@ export default function StudentDataCenterPage() {
     }, 250);
     return () => clearTimeout(timer);
   }, [search]);
+
+  // Handle legacy tab=admissions query parameter gracefully by redirecting to dedicated Admissions Desk
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("tab") === "admissions") {
+        window.location.replace("/dashboard/admissions");
+      }
+    }
+  }, []);
 
   // Modals State
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -306,6 +317,14 @@ export default function StudentDataCenterPage() {
             >
               Archived ({metrics.total - metrics.active})
             </button>
+
+            <Link
+              href="/dashboard/admissions"
+              className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-indigo-600 flex items-center gap-1.5 ml-1 border-l border-slate-200 pl-2"
+            >
+              <UserPlus className="w-3.5 h-3.5 text-indigo-500" />
+              <span>Admissions & Inquiries</span>
+            </Link>
           </div>
 
           <div className="flex items-center gap-2">

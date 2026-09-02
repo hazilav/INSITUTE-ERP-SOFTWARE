@@ -400,7 +400,7 @@ export default async function DashboardPage() {
             </Link>
 
             <Link
-              href="/dashboard/students?tab=admissions"
+              href="/dashboard/admissions"
               className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200 text-blue-900 block font-semibold flex items-center justify-between"
             >
               <span>📞 Today's Follow-ups</span>

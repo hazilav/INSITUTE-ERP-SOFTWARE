@@ -36,12 +36,14 @@ interface AddStudentModalProps {
   onClose: () => void;
   onSuccess: () => void;
   suggestedCode?: string;
+  initialStatus?: string;
 }
 
 export default function AddStudentModal({
   isOpen,
   onClose,
   onSuccess,
+  initialStatus = "ENROLLED",
 }: AddStudentModalProps) {
   const [courses, setCourses] = useState<OptionItem[]>([]);
   const [batches, setBatches] = useState<OptionItem[]>([]);
@@ -61,8 +63,14 @@ export default function AddStudentModal({
   const [enrollmentDate, setEnrollmentDate] = useState(
     new Date().toISOString().split("T")[0]
   );
-  const [admissionStatus, setAdmissionStatus] = useState("ENROLLED");
+  const [admissionStatus, setAdmissionStatus] = useState(initialStatus);
   const [customStudentCode, setCustomStudentCode] = useState("");
+
+  useEffect(() => {
+    if (initialStatus) {
+      setAdmissionStatus(initialStatus);
+    }
+  }, [initialStatus, isOpen]);
 
   // Student Portal Login Credentials State
   const [createPortalAccount, setCreatePortalAccount] = useState(true);
