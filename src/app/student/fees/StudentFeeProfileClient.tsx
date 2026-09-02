@@ -93,8 +93,8 @@ export default function StudentFeeProfileClient({
             </div>
 
             {feePlan.installments.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm text-slate-600">
+              <div className="overflow-x-auto w-full">
+                <table className="w-full text-left text-sm text-slate-600 min-w-[500px]">
                   <thead className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                     <tr>
                       <th className="px-4 py-3">Installment</th>
@@ -144,8 +144,8 @@ export default function StudentFeeProfileClient({
             </div>
 
             {feePlan.payments.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm text-slate-600">
+              <div className="overflow-x-auto w-full">
+                <table className="w-full text-left text-sm text-slate-600 min-w-[600px]">
                   <thead className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                     <tr>
                       <th className="px-4 py-3">Receipt #</th>

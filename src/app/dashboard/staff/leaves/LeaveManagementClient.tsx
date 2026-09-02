@@ -103,7 +103,7 @@ export default function LeaveManagementClient({ instituteName }: LeaveManagement
 
       {/* KPI Cards */}
       {reportData?.summary && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
             <span className="text-[11px] font-semibold text-slate-500 uppercase">Total Requests</span>
             <p className="text-2xl font-extrabold text-slate-900 mt-1 font-mono">{reportData.summary.total}</p>
@@ -134,8 +134,8 @@ export default function LeaveManagementClient({ instituteName }: LeaveManagement
         {loading ? (
           <div className="p-12 text-center text-xs text-slate-400">Loading leave requests...</div>
         ) : leaves.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left text-xs min-w-[700px]">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
                 <tr>
                   <th className="py-3 px-4">Staff Member</th>

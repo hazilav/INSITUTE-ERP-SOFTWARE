@@ -160,21 +160,22 @@ export default function StudentLayout({
       </aside>
 
       {/* Mobile Top Navbar */}
-      <header className="lg:hidden h-16 bg-slate-900 text-white px-4 flex items-center justify-between sticky top-0 z-50 shadow-md">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-brand-600 text-white flex items-center justify-center font-bold text-xs">
+      <header className="lg:hidden h-16 bg-slate-900 text-white px-3 sm:px-4 flex items-center justify-between sticky top-0 z-50 shadow-md">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <div className="w-8 h-8 rounded-xl bg-brand-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
             {initials}
           </div>
-          <div>
-            <h1 className="font-bold text-xs truncate max-w-[160px]">{student.name}</h1>
-            <p className="text-[10px] text-brand-400 font-mono">{student.student_code}</p>
+          <div className="min-w-0">
+            <h1 className="font-bold text-xs truncate max-w-[140px] sm:max-w-[200px]">{student.name}</h1>
+            <p className="text-[10px] text-brand-400 font-mono truncate">{student.student_code}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-slate-300 hover:text-white rounded-lg"
+            className="p-2 text-slate-300 hover:text-white rounded-lg min-w-[40px] min-h-[40px] flex items-center justify-center"
+            aria-label="Toggle Menu"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -183,17 +184,17 @@ export default function StudentLayout({
 
       {/* Mobile Dropdown Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-x-0 top-16 bg-slate-900 border-b border-slate-800 z-40 p-4 space-y-2 animate-in slide-in-from-top duration-200">
-          <div className="grid grid-cols-2 gap-2">
+        <div className="lg:hidden fixed inset-x-0 top-16 bg-slate-900 border-b border-slate-800 z-40 p-3 sm:p-4 space-y-2 animate-in slide-in-from-top duration-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {navItems.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 p-2.5 sm:p-3 rounded-xl bg-slate-800/80 text-[11px] sm:text-xs font-semibold text-slate-200 hover:bg-brand-600 hover:text-white transition-colors"
+                className="flex items-center gap-2.5 p-2.5 sm:p-3 rounded-xl bg-slate-800/80 text-xs font-semibold text-slate-200 hover:bg-brand-600 hover:text-white transition-colors min-h-[42px]"
               >
-                <item.icon className="w-4 h-4 text-brand-400" />
-                <span>{item.name}</span>
+                <item.icon className="w-4 h-4 text-brand-400 shrink-0" />
+                <span className="truncate">{item.name}</span>
               </Link>
             ))}
           </div>
@@ -208,7 +209,7 @@ export default function StudentLayout({
       )}
 
       {/* Main Content Body */}
-      <main className="flex-1 lg:ml-64 p-3 sm:p-6 lg:p-8 pb-20 lg:pb-8 max-w-7xl mx-auto w-full min-w-0">
+      <main className="flex-1 lg:ml-64 p-3 sm:p-6 lg:p-8 pb-24 lg:pb-8 max-w-7xl mx-auto w-full min-w-0">
         <ErrorBoundary fallbackTitle="Something went wrong in this section">
           {children}
         </ErrorBoundary>

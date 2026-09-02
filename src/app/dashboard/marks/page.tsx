@@ -169,7 +169,7 @@ export default function MarksPage() {
             setEditingAssessment(null);
             setCreateModalOpen(true);
           }}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-md shadow-brand-500/20 transition-all self-start sm:self-auto"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-md shadow-brand-500/20 transition-all w-full sm:w-auto min-h-[42px]"
         >
           <Plus className="w-4 h-4" /> Create Assessment
         </button>
@@ -341,8 +341,8 @@ export default function MarksPage() {
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left text-sm text-slate-600 min-w-[750px]">
               <thead className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-3.5">Assessment Name</th>

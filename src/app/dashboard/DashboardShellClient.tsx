@@ -55,7 +55,7 @@ export default function DashboardShellClient({
         />
 
         {/* Dynamic Page Content */}
-        <main className="flex-1 p-3 sm:p-6 lg:p-8 pb-20 md:pb-8 max-w-7xl w-full mx-auto min-w-0">
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 pb-24 md:pb-8 max-w-7xl w-full mx-auto min-w-0">
           <ErrorBoundary fallbackTitle="Something went wrong in this page">
             {children}
           </ErrorBoundary>

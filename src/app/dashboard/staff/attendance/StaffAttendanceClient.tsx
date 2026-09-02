@@ -180,7 +180,7 @@ export default function StaffAttendanceClient({ instituteName }: StaffAttendance
 
       {/* KPI Cards */}
       {reportData?.summary && (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
             <span className="text-[11px] font-semibold text-emerald-600 uppercase">Present Today</span>
             <p className="text-2xl font-extrabold text-emerald-600 mt-1 font-mono">{reportData.summary.presentToday}</p>
@@ -218,8 +218,8 @@ export default function StaffAttendanceClient({ instituteName }: StaffAttendance
         {loading ? (
           <div className="p-12 text-center text-xs text-slate-400">Loading staff attendance roster...</div>
         ) : staffItems.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left text-xs min-w-[700px]">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
                 <tr>
                   <th className="py-3 px-4">Employee ID</th>

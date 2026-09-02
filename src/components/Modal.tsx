@@ -63,7 +63,7 @@ export default function Modal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-hidden">
       {/* Backdrop click dismiss */}
       <div
         onClick={onClose}
@@ -73,15 +73,15 @@ export default function Modal({
 
       {/* Modal Container Card */}
       <div
-        className={`relative z-10 bg-white rounded-3xl shadow-2xl border border-slate-100 w-[calc(100vw-24px)] ${maxWidthClasses[maxWidth]} max-h-[calc(100vh-24px)] sm:max-h-[90vh] flex flex-col overflow-hidden my-0 sm:my-auto animate-in fade-in zoom-in-95 duration-200`}
+        className={`relative z-10 bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 w-[calc(100vw-16px)] sm:w-full ${maxWidthClasses[maxWidth]} max-h-[calc(100dvh-16px)] sm:max-h-[90vh] flex flex-col overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200`}
         role="dialog"
         aria-modal="true"
       >
         {/* Sticky Header */}
-        <div className="px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
-          <div className="flex items-center gap-3 min-w-0 pr-2">
+        <div className="px-4 py-3.5 sm:px-6 sm:py-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 pr-2">
             {icon && (
-              <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold shrink-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold shrink-0">
                 {icon}
               </div>
             )}
@@ -98,7 +98,7 @@ export default function Modal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors shrink-0"
+            className="p-2 sm:p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -108,14 +108,14 @@ export default function Modal({
         {/* Scrollable Form Body */}
         <div
           ref={contentRef}
-          className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 min-h-0 text-slate-800 text-xs sm:text-sm"
+          className="p-3.5 sm:p-6 overflow-y-auto flex-1 space-y-4 min-h-0 text-slate-800 text-xs sm:text-sm"
         >
           {children}
         </div>
 
         {/* Sticky Footer */}
         {footer && (
-          <div className="px-5 py-4 sm:px-6 sm:py-4 border-t border-slate-100 shrink-0 bg-slate-50/50">
+          <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-slate-100 shrink-0 bg-slate-50/50">
             {footer}
           </div>
         )}

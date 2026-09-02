@@ -118,7 +118,7 @@ export default function FinanceReportClient({ instituteName }: FinanceReportClie
 
       {/* Summary KPI Cards */}
       {reportData?.summary && (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
             <span className="text-[11px] font-semibold text-slate-500 uppercase">Total Expected</span>
             <p className="text-2xl font-extrabold text-slate-900 mt-1 font-mono">{formatCurrency(reportData.summary.totalExpected)}</p>
@@ -144,9 +144,9 @@ export default function FinanceReportClient({ instituteName }: FinanceReportClie
 
       {/* Payment Methods Breakdown Grid */}
       {reportData?.paymentMethods && (
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-3">
+        <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-3">
           <h3 className="font-bold text-slate-900 text-sm">Collection by Payment Method</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {reportData.paymentMethods.map((m: any) => (
               <div key={m.method} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-700">{m.method}</span>
@@ -168,8 +168,8 @@ export default function FinanceReportClient({ instituteName }: FinanceReportClie
         {loading ? (
           <div className="p-12 text-center text-xs text-slate-400">Loading fee account metrics...</div>
         ) : reportData?.outstandingFeesTable?.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left text-xs min-w-[700px]">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
                 <tr>
                   <th className="py-3 px-4">Student ID</th>

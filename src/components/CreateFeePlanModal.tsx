@@ -333,7 +333,7 @@ export default function CreateFeePlanModal({
           <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
             Payment Mode Structure
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
             <label
               className={`p-3 rounded-xl border flex items-center justify-center gap-2 cursor-pointer transition-colors ${
                 paymentType === "FULL"

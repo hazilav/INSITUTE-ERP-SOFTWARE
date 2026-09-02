@@ -148,12 +148,12 @@ export default function AdmissionsPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gradient-to-r from-indigo-900 via-brand-900 to-slate-900 p-6 rounded-3xl text-white shadow-xl relative overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gradient-to-r from-indigo-900 via-brand-900 to-slate-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl text-white shadow-xl relative overflow-hidden">
         <div className="relative z-10 space-y-1">
           <div className="flex items-center gap-2 text-indigo-300 text-xs font-bold tracking-wider uppercase">
             <UserPlus className="w-4 h-4" /> Admissions & Inquiries
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+          <h1 className="text-xl sm:text-3xl font-black tracking-tight">
             Admissions Desk
           </h1>
           <p className="text-slate-300 text-xs sm:text-sm max-w-xl">
@@ -161,11 +161,11 @@ export default function AdmissionsPage() {
           </p>
         </div>
 
-        <div className="relative z-10 flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
+        <div className="relative z-10 flex items-center gap-2 sm:gap-2.5 shrink-0 flex-wrap sm:flex-nowrap w-full sm:w-auto">
           <button
             type="button"
             onClick={() => openNewAdmission("INQUIRY")}
-            className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/10 flex items-center gap-2 transition-all backdrop-blur-sm"
+            className="flex-1 sm:flex-initial justify-center px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/10 flex items-center gap-2 transition-all backdrop-blur-sm min-h-[42px]"
           >
             <PhoneCall className="w-4 h-4 text-indigo-300" />
             <span>+ Add Inquiry</span>
@@ -174,7 +174,7 @@ export default function AdmissionsPage() {
           <button
             type="button"
             onClick={() => openNewAdmission("ENROLLED")}
-            className="px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs shadow-lg shadow-brand-500/30 flex items-center gap-2 transition-all"
+            className="flex-1 sm:flex-initial justify-center px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs shadow-lg shadow-brand-500/30 flex items-center gap-2 transition-all min-h-[42px]"
           >
             <Plus className="w-4 h-4" />
             <span>+ New Admission</span>
@@ -186,7 +186,7 @@ export default function AdmissionsPage() {
       </div>
 
       {/* KPI Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Admissions</p>
@@ -368,8 +368,8 @@ export default function AdmissionsPage() {
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left text-sm text-slate-600 min-w-[700px]">
               <thead className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-3.5">Candidate / Student</th>

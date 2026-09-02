@@ -97,7 +97,7 @@ export default function StaffTasksReportClient({ instituteName }: StaffTasksRepo
 
       {/* Summary KPI Cards */}
       {reportData?.summary && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Staff</span>
             <p className="text-3xl font-extrabold text-slate-900 mt-1 font-mono">{reportData.summary.activeStaffCount}</p>
@@ -141,8 +141,8 @@ export default function StaffTasksReportClient({ instituteName }: StaffTasksRepo
         {loading ? (
           <div className="p-12 text-center text-xs text-slate-400">Loading staff roster data...</div>
         ) : reportData?.staffPerformanceTable?.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left text-xs min-w-[700px]">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
                 <tr>
                   <th className="py-3 px-4">Employee ID</th>

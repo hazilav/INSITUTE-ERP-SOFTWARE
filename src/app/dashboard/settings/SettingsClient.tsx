@@ -904,8 +904,8 @@ export default function SettingsClient({
               </div>
 
               {/* Users Roster Table */}
-              <div className="border border-slate-200/80 rounded-2xl overflow-x-auto">
-                <table className="w-full text-left text-xs">
+              <div className="border border-slate-200/80 rounded-2xl overflow-x-auto w-full">
+                <table className="w-full text-left text-xs min-w-[550px]">
                   <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
                     <tr>
                       <th className="py-3 px-4">Name</th>
@@ -981,8 +981,8 @@ export default function SettingsClient({
                     </button>
                   </div>
 
-                  <div className="border border-slate-200/80 rounded-2xl overflow-x-auto">
-                    <table className="w-full text-left text-xs">
+                  <div className="border border-slate-200/80 rounded-2xl overflow-x-auto w-full">
+                    <table className="w-full text-left text-xs min-w-[500px]">
                       <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase">
                         <tr>
                           <th className="py-2.5 px-4">Module / Section</th>

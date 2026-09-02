@@ -384,7 +384,7 @@ export default function TimetableClient({
         </div>
 
         {/* Multi-Filter Controls */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2 border-t border-slate-100">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 pt-2 border-t border-slate-100">
           <div>
             <select
               value={selectedCourse}
@@ -457,7 +457,7 @@ export default function TimetableClient({
         {loading ? (
           <div className="p-16 text-center text-xs text-slate-400">Loading weekly timetable...</div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto w-full">
             <div className="min-w-[900px] grid grid-cols-7 divide-x divide-slate-200 border-b border-slate-200 bg-slate-50">
               {weekDays.map((d, i) => {
                 const isToday = new Date().toDateString() === d.toDateString();

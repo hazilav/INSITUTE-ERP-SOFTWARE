@@ -323,8 +323,8 @@ export default function RecordedContentPage() {
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left text-sm text-slate-600 min-w-[700px]">
               <thead className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-3.5">Video Title</th>
