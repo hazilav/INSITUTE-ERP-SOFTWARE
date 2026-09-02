@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
@@ -41,13 +41,28 @@ export default function Sidebar({
   onClose,
   instituteMode = "hybrid",
 }: SidebarProps) {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const tabParam = searchParams?.get("tab");
-  const isAdmissions = pathname.startsWith("/dashboard/admissions") || (pathname === "/dashboard/students" && tabParam === "admissions");
-  const isStudents = (pathname === "/dashboard/students" || (pathname.startsWith("/dashboard/students/") && !pathname.startsWith("/dashboard/students/documents") && !pathname.startsWith("/dashboard/students/certificates"))) && !isAdmissions;
+  const pathname = usePathname() || "";
+  const isAdmissions = pathname === "/dashboard/admissions" || pathname.startsWith("/dashboard/admissions/");
+  const isStudents =
+    (pathname === "/dashboard/students" ||
+      (pathname.startsWith("/dashboard/students/") &&
+        !pathname.startsWith("/dashboard/students/documents") &&
+        !pathname.startsWith("/dashboard/students/certificates"))) &&
+    !isAdmissions;
 
-  const [academicsOpen, setAcademicsOpen] = useState(pathname.startsWith("/dashboard/courses") || pathname.startsWith("/dashboard/batches") || pathname.startsWith("/dashboard/classes") || pathname.startsWith("/dashboard/activities") || pathname.startsWith("/dashboard/marks"));
+  const handleNavClick = () => {
+    if (isOpen) {
+      onClose();
+    }
+  };
+
+  const [academicsOpen, setAcademicsOpen] = useState(
+    pathname.startsWith("/dashboard/courses") ||
+      pathname.startsWith("/dashboard/batches") ||
+      pathname.startsWith("/dashboard/classes") ||
+      pathname.startsWith("/dashboard/activities") ||
+      pathname.startsWith("/dashboard/marks")
+  );
 
   const isStaffOrMentor = role === "STAFF" || role === "MENTOR";
 
@@ -93,7 +108,7 @@ export default function Sidebar({
               <Link
                 key={item.name}
                 href={item.href}
-                onClick={onClose}
+                onClick={handleNavClick}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                   item.active
                     ? "bg-brand-600 text-white shadow-md shadow-brand-600/20"
@@ -158,36 +173,36 @@ export default function Sidebar({
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
           <Link
             href="/dashboard"
-            onClick={onClose}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+            onClick={handleNavClick}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer select-none ${
               pathname === "/dashboard" ? "bg-brand-600 text-white shadow-md shadow-brand-600/20" : "text-slate-300 hover:bg-slate-800 hover:text-white"
             }`}
           >
-            <LayoutDashboard className="w-5 h-5" />
+            <LayoutDashboard className="w-5 h-5 shrink-0" />
             <span>Dashboard</span>
           </Link>
 
           <Link
             href="/dashboard/admissions"
-            onClick={onClose}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+            onClick={handleNavClick}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer select-none ${
               isAdmissions ? "bg-brand-600 text-white shadow-md shadow-brand-600/20 font-bold" : "text-slate-300 hover:bg-slate-800 hover:text-white"
             }`}
           >
-            <UserPlus className={`w-5 h-5 ${isAdmissions ? "text-white" : "text-indigo-400"}`} />
+            <UserPlus className={`w-5 h-5 shrink-0 ${isAdmissions ? "text-white" : "text-indigo-400"}`} />
             <span>Admissions</span>
           </Link>
 
           <Link
             href="/dashboard/students"
-            onClick={onClose}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+            onClick={handleNavClick}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer select-none ${
               isStudents
                 ? "bg-brand-600 text-white shadow-md shadow-brand-600/20 font-bold"
                 : "text-slate-300 hover:bg-slate-800 hover:text-white"
             }`}
           >
-            <Users className="w-5 h-5" />
+            <Users className="w-5 h-5 shrink-0" />
             <span>Students</span>
           </Link>
 
@@ -196,15 +211,15 @@ export default function Sidebar({
             <button
               type="button"
               onClick={() => setAcademicsOpen(!academicsOpen)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer ${
                 isAcademicsActive ? "bg-slate-800/80 text-white font-bold" : "text-slate-300 hover:bg-slate-800 hover:text-white"
               }`}
             >
               <div className="flex items-center gap-3">
-                <BookOpen className="w-5 h-5 text-purple-400" />
+                <BookOpen className="w-5 h-5 text-purple-400 shrink-0" />
                 <span>Academics</span>
               </div>
-              {academicsOpen ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+              {academicsOpen ? <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" /> : <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />}
             </button>
 
             {academicsOpen && (
@@ -213,12 +228,12 @@ export default function Sidebar({
                   <Link
                     key={sub.name}
                     href={sub.href}
-                    onClick={onClose}
-                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg font-medium text-xs transition-all ${
+                    onClick={handleNavClick}
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg font-medium text-xs transition-all cursor-pointer ${
                       sub.active ? "bg-brand-600 text-white font-bold shadow-xs" : "text-slate-400 hover:bg-slate-800 hover:text-white"
                     }`}
                   >
-                    <sub.icon className="w-4 h-4" />
+                    <sub.icon className="w-4 h-4 shrink-0" />
                     <span>{sub.name}</span>
                   </Link>
                 ))}
@@ -228,78 +243,78 @@ export default function Sidebar({
 
           <Link
             href="/dashboard/attendance"
-            onClick={onClose}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+            onClick={handleNavClick}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer select-none ${
               pathname.startsWith("/dashboard/attendance") ? "bg-brand-600 text-white shadow-md" : "text-slate-300 hover:bg-slate-800 hover:text-white"
             }`}
           >
-            <CalendarCheck className="w-5 h-5" />
+            <CalendarCheck className="w-5 h-5 shrink-0" />
             <span>Attendance</span>
           </Link>
 
           <Link
             href="/dashboard/fees"
-            onClick={onClose}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+            onClick={handleNavClick}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer select-none ${
               pathname.startsWith("/dashboard/fees") ? "bg-brand-600 text-white shadow-md" : "text-slate-300 hover:bg-slate-800 hover:text-white"
             }`}
           >
-            <BadgeDollarSign className="w-5 h-5" />
+            <BadgeDollarSign className="w-5 h-5 shrink-0" />
             <span>Fees</span>
           </Link>
 
           <Link
             href="/dashboard/staff"
-            onClick={onClose}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+            onClick={handleNavClick}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer select-none ${
               pathname === "/dashboard/staff" || pathname.startsWith("/dashboard/staff/") ? "bg-brand-600 text-white shadow-md" : "text-slate-300 hover:bg-slate-800 hover:text-white"
             }`}
           >
-            <UserCheck className="w-5 h-5" />
+            <UserCheck className="w-5 h-5 shrink-0" />
             <span>Staff & Mentors</span>
           </Link>
 
           <Link
             href="/dashboard/reports/staff-tasks"
-            onClick={onClose}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+            onClick={handleNavClick}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer select-none ${
               pathname.startsWith("/dashboard/reports/staff-tasks") ? "bg-brand-600 text-white shadow-md" : "text-slate-300 hover:bg-slate-800 hover:text-white"
             }`}
           >
-            <ClipboardList className="w-5 h-5" />
+            <ClipboardList className="w-5 h-5 shrink-0" />
             <span>Tasks</span>
           </Link>
 
           <Link
             href="/dashboard/reports"
-            onClick={onClose}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+            onClick={handleNavClick}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer select-none ${
               pathname === "/dashboard/reports" ? "bg-brand-600 text-white shadow-md" : "text-slate-300 hover:bg-slate-800 hover:text-white"
             }`}
           >
-            <BarChart3 className="w-5 h-5" />
+            <BarChart3 className="w-5 h-5 shrink-0" />
             <span>Reports</span>
           </Link>
 
           <Link
             href="/dashboard/students/documents"
-            onClick={onClose}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+            onClick={handleNavClick}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer select-none ${
               pathname.startsWith("/dashboard/students/documents") ? "bg-brand-600 text-white shadow-md" : "text-slate-300 hover:bg-slate-800 hover:text-white"
             }`}
           >
-            <FileText className="w-5 h-5" />
+            <FileText className="w-5 h-5 shrink-0" />
             <span>Documents</span>
           </Link>
 
           <Link
             href="/dashboard/settings"
-            onClick={onClose}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+            onClick={handleNavClick}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer select-none ${
               pathname === "/dashboard/settings" ? "bg-brand-600 text-white shadow-md" : "text-slate-300 hover:bg-slate-800 hover:text-white"
             }`}
           >
-            <Settings className="w-5 h-5" />
+            <Settings className="w-5 h-5 shrink-0" />
             <span>Settings</span>
           </Link>
         </div>
