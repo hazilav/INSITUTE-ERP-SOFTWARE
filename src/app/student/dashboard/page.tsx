@@ -312,7 +312,7 @@ export default async function StudentDashboardPage() {
 
                     {c.class_type === "recorded" && (
                       <Link
-                        href="/student/content"
+                        href="/student/recorded-classes"
                         className="text-white font-semibold bg-emerald-600 hover:bg-emerald-700 px-3 py-1 rounded-lg shadow-xs flex items-center gap-1 transition-colors"
                       >
                         <Video className="w-3.5 h-3.5" /> Watch Recording

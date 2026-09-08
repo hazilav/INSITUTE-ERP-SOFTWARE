@@ -117,6 +117,7 @@ model User {
   class_audit_histories    ClassAuditHistory[]
   uploaded_student_documents StudentDocument[] @relation("UploadedStudentDocuments")
   generated_certificates   Certificate[]     @relation("GeneratedCertificates")
+  created_recorded_contents RecordedContent[] @relation("RecordedContentCreator")
 
   @@unique([institute_id, email])
   @@map("users")
@@ -196,6 +197,7 @@ model Batch {
   mentor_assignments MentorAssignment[]
   recurring_schedules RecurringSchedule[]
   assigned_staff     StaffProfile[]
+  recorded_contents  RecordedContent[]
 
   @@unique([institute_id, code])
   @@map("batches")
@@ -245,22 +247,34 @@ model Class {
 }
 
 model RecordedContent {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   institute_id   String
   course_id      String
+  batch_id       String?
   module_name    String?
+  subject        String?
   title          String
   description    String?
+  teacher_name   String?
+  class_date     DateTime?
   video_url      String
-  duration       String?  // e.g. "45 mins"
-  publish_status String   @default("Published") // Draft, Published
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
+  storage_key    String?
+  thumbnail_url  String?
+  duration       String?   // e.g. "45 mins"
+  file_size      String?   // e.g. "185 MB"
+  publish_status String    @default("Published") // Draft, Published
+  created_by_id  String?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
 
-  institute Institute                @relation(fields: [institute_id], references: [id], onDelete: Cascade)
-  course    Course                   @relation(fields: [course_id], references: [id], onDelete: Cascade)
-  progress  StudentContentProgress[]
+  institute  Institute                @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  course     Course                   @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  batch      Batch?                   @relation(fields: [batch_id], references: [id], onDelete: SetNull)
+  created_by User?                    @relation("RecordedContentCreator", fields: [created_by_id], references: [id], onDelete: SetNull)
+  progress   StudentContentProgress[]
 
+  @@index([institute_id, course_id])
+  @@index([institute_id, publish_status])
   @@map("recorded_contents")
 }
 

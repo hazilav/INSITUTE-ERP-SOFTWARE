@@ -55,7 +55,7 @@ export default function StudentLayout({
 
   // Show Recorded Content for Online & Hybrid modes
   if (instituteMode === "online" || instituteMode === "hybrid") {
-    navItems.push({ name: "Recorded Classes", href: "/student/content", icon: PlayCircle });
+    navItems.push({ name: "Recorded Classes", href: "/student/recorded-classes", icon: PlayCircle });
   }
 
   navItems.push(

@@ -16,6 +16,7 @@ const MODULE_KEYS = [
   "tasks",
   "reports",
   "documents",
+  "recorded_classes",
   "settings",
 ];
 

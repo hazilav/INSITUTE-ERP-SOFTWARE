@@ -22,6 +22,7 @@ import {
   ChevronDown,
   ChevronRight,
   UserPlus,
+  Video,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -61,6 +62,7 @@ export default function Sidebar({
     pathname.startsWith("/dashboard/courses") ||
       pathname.startsWith("/dashboard/batches") ||
       pathname.startsWith("/dashboard/classes") ||
+      pathname.startsWith("/dashboard/recorded-classes") ||
       pathname.startsWith("/dashboard/activities") ||
       pathname.startsWith("/dashboard/marks")
   );
@@ -73,6 +75,7 @@ export default function Sidebar({
       { name: "Home", href: "/dashboard", icon: LayoutDashboard, active: pathname === "/dashboard" },
       { name: "My Tasks", href: "/dashboard/reports/staff-tasks", icon: ClipboardList, active: pathname.startsWith("/dashboard/reports/staff-tasks") },
       { name: "My Classes", href: "/dashboard/classes", icon: GraduationCap, active: pathname.startsWith("/dashboard/classes") },
+      { name: "Recorded Classes", href: "/dashboard/recorded-classes", icon: Video, active: pathname.startsWith("/dashboard/recorded-classes") },
       { name: "Students", href: "/dashboard/students", icon: Users, active: pathname === "/dashboard/students" },
       { name: "Activities", href: "/dashboard/activities", icon: ClipboardList, active: pathname.startsWith("/dashboard/activities") },
       { name: "Attendance", href: "/dashboard/staff/my-attendance", icon: CalendarCheck, active: pathname.startsWith("/dashboard/staff/my-attendance") },
@@ -138,6 +141,7 @@ export default function Sidebar({
     { name: "Courses", href: "/dashboard/courses", icon: BookOpen, active: pathname.startsWith("/dashboard/courses") },
     { name: "Batches", href: "/dashboard/batches", icon: Layers, active: pathname.startsWith("/dashboard/batches") },
     { name: "Classes", href: "/dashboard/classes", icon: GraduationCap, active: pathname.startsWith("/dashboard/classes") },
+    { name: "Recorded Classes", href: "/dashboard/recorded-classes", icon: Video, active: pathname.startsWith("/dashboard/recorded-classes") },
     { name: "Activities", href: "/dashboard/activities", icon: ClipboardList, active: pathname.startsWith("/dashboard/activities") },
     { name: "Marks & Results", href: "/dashboard/marks", icon: FileBarChart, active: pathname.startsWith("/dashboard/marks") },
   ];
