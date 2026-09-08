@@ -143,7 +143,7 @@ export default function PaymentReceiptModal({
       }
     >
       {/* Clean Single-Page A4 Payment Receipt Layout Preview */}
-      <div className="text-slate-800 bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-xs space-y-3.5 max-w-[190mm] mx-auto">
+      <div className="text-slate-800 bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-xs space-y-3.5 max-w-[190mm] mx-auto print:p-0 print:border-none print:shadow-none print:m-0 print:w-full print:max-w-none print:space-y-2.5">
         {/* Header Banner: Logo + Institute + Title */}
         <div className="flex flex-col sm:flex-row items-start justify-between pb-3 border-b-2 border-slate-900 gap-3">
           <div className="flex items-start gap-3">

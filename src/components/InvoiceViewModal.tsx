@@ -193,7 +193,7 @@ export default function InvoiceViewModal({
       }
     >
       {/* Clean Single-Page A4 Invoice Document Layout Preview */}
-      <div className="text-slate-800 bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-xs space-y-4 max-w-[190mm] mx-auto">
+      <div className="text-slate-800 bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-xs space-y-4 max-w-[190mm] mx-auto print:p-0 print:border-none print:shadow-none print:m-0 print:w-full print:max-w-none print:space-y-3">
         {/* Header: Logo & Institute Info + Invoice Metadata */}
         <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pb-3 border-b-2 border-slate-900">
           <div className="flex items-start gap-3">

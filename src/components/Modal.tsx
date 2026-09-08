@@ -70,22 +70,22 @@ export default function Modal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-start justify-center sm:p-6 sm:pt-8 sm:pb-12">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-start justify-center sm:p-6 sm:pt-8 sm:pb-12 print:static print:inset-auto print:bg-transparent print:p-0 print:m-0 print:overflow-visible">
       {/* Backdrop click dismiss */}
       <div
         onClick={onClose}
-        className="fixed inset-0 z-0 bg-transparent"
+        className="fixed inset-0 z-0 bg-transparent print:hidden"
         aria-hidden="true"
       />
 
       {/* Modal Container Card */}
       <div
-        className={`fixed inset-[12px] max-h-[calc(100vh-24px)] max-h-[calc(100dvh-24px)] sm:static sm:inset-auto sm:max-h-[calc(100vh-64px)] sm:max-h-[calc(100dvh-64px)] z-10 bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 sm:w-full ${maxWidthClasses[maxWidth]} flex flex-col overflow-hidden animate-in fade-in duration-200`}
+        className={`fixed inset-[12px] max-h-[calc(100vh-24px)] max-h-[calc(100dvh-24px)] sm:static sm:inset-auto sm:max-h-[calc(100vh-64px)] sm:max-h-[calc(100dvh-64px)] z-10 bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 sm:w-full ${maxWidthClasses[maxWidth]} flex flex-col overflow-hidden animate-in fade-in duration-200 print:static print:inset-auto print:max-h-none print:w-full print:shadow-none print:border-none print:p-0 print:m-0 print:overflow-visible`}
         role="dialog"
         aria-modal="true"
       >
         {/* Sticky Header */}
-        <div className="px-4 py-3.5 sm:px-6 sm:py-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
+        <div className="px-4 py-3.5 sm:px-6 sm:py-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white print:hidden">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 pr-2">
             {icon && (
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold shrink-0">
@@ -115,14 +115,14 @@ export default function Modal({
         {/* Scrollable Form Body */}
         <div
           ref={contentRef}
-          className="p-3.5 sm:p-6 overflow-y-auto flex-1 space-y-4 min-h-0 text-slate-800 text-xs sm:text-sm"
+          className="p-3.5 sm:p-6 overflow-y-auto flex-1 space-y-4 min-h-0 text-slate-800 text-xs sm:text-sm print:overflow-visible print:p-0 print:m-0 print:max-h-none"
         >
           {children}
         </div>
 
         {/* Sticky Footer */}
         {footer && (
-          <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-slate-100 shrink-0 bg-slate-50/80">
+          <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-slate-100 shrink-0 bg-slate-50/80 print:hidden">
             {footer}
           </div>
         )}

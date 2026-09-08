@@ -1053,7 +1053,7 @@ export function printHtmlViaIframe(htmlContent: string, documentTitle: string) {
   iframe.id = "erp-print-iframe";
   iframe.setAttribute(
     "style",
-    "position: fixed; width: 0; height: 0; border: 0; left: -9999px; top: -9999px; visibility: hidden;"
+    "position: fixed; width: 210mm; height: 297mm; border: 0; left: -9999px; top: 0; opacity: 0; pointer-events: none; z-index: -99999;"
   );
   document.body.appendChild(iframe);
 
@@ -1073,10 +1073,30 @@ export function printHtmlViaIframe(htmlContent: string, documentTitle: string) {
     }
   };
 
-  if (iframe.contentWindow) {
-    iframe.contentWindow.onload = () => {
-      setTimeout(doPrint, 150);
+  // Ensure images (e.g. logo) are loaded before print dialog triggers
+  const images = doc.images;
+  if (!images || images.length === 0) {
+    setTimeout(doPrint, 150);
+  } else {
+    let pending = images.length;
+    const onImgFinish = () => {
+      pending--;
+      if (pending <= 0) {
+        setTimeout(doPrint, 150);
+      }
     };
-    setTimeout(doPrint, 350);
+    for (let i = 0; i < images.length; i++) {
+      if (images[i].complete) {
+        pending--;
+      } else {
+        images[i].onload = onImgFinish;
+        images[i].onerror = onImgFinish;
+      }
+    }
+    if (pending <= 0) {
+      setTimeout(doPrint, 150);
+    } else {
+      setTimeout(doPrint, 750);
+    }
   }
 }

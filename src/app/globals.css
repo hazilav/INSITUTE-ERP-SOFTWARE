@@ -27,8 +27,8 @@ body {
   }
 
   html, body {
-    width: 210mm;
-    min-height: 297mm;
+    width: 210mm !important;
+    min-height: 297mm !important;
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff !important;
@@ -37,8 +37,32 @@ body {
     print-color-adjust: exact !important;
   }
 
+  /* Hide navigation, sidebars, headers, action buttons */
+  nav,
+  aside,
+  header,
+  footer,
+  [role="navigation"],
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Prevent any element from repeating on multiple pages due to position: fixed */
+  .fixed,
+  [role="dialog"] {
+    position: static !important;
+    inset: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+  }
+
   /* Prevent page breaks inside any section */
-  .no-break, table, tr {
+  .no-break,
+  table,
+  tr {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
