@@ -24,6 +24,8 @@ import {
   Link2,
   UserX,
   UserPlus,
+  ShieldAlert,
+  ShieldCheck,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
@@ -39,6 +41,7 @@ const AddStudentModal = dynamic(() => import("@/components/AddStudentModal"), { 
 const EditStudentModal = dynamic(() => import("@/components/EditStudentModal"), { ssr: false });
 const ArchiveStudentModal = dynamic(() => import("@/components/ArchiveStudentModal"), { ssr: false });
 const ResetPasswordModal = dynamic(() => import("@/components/ResetPasswordModal"), { ssr: false });
+const FreezeStudentModal = dynamic(() => import("@/components/FreezeStudentModal"), { ssr: false });
 
 interface StudentRecord {
   id: string;
@@ -49,6 +52,9 @@ interface StudentRecord {
   email?: string | null;
   learning_mode: string;
   status: string;
+  freeze_reason?: string | null;
+  frozen_at?: string | null;
+  frozen_by?: string | null;
   course_id?: string | null;
   batch_id?: string | null;
   user?: {
@@ -118,6 +124,15 @@ export default function StudentDataCenterPage() {
   const [editingStudent, setEditingStudent] = useState<StudentRecord | null>(null);
   const [archivingStudent, setArchivingStudent] = useState<StudentRecord | null>(null);
   const [resettingStudent, setResettingStudent] = useState<StudentRecord | null>(null);
+  const [freezeModalState, setFreezeModalState] = useState<{
+    isOpen: boolean;
+    student: StudentRecord | null;
+    action: "freeze" | "unfreeze";
+  }>({
+    isOpen: false,
+    student: null,
+    action: "freeze",
+  });
 
   const handleBulkArchive = async () => {
     if (selectedStudentIds.length === 0) return;
@@ -193,6 +208,8 @@ export default function StudentDataCenterPage() {
     switch (status) {
       case "ACTIVE":
         return "bg-emerald-50 text-emerald-700 border-emerald-200";
+      case "FROZEN":
+        return "bg-amber-50 text-amber-800 border-amber-300 font-bold";
       case "ON_HOLD":
         return "bg-amber-50 text-amber-700 border-amber-200";
       case "COMPLETED":
@@ -371,35 +388,90 @@ export default function StudentDataCenterPage() {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 pt-1 text-xs">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200">
-            <Filter className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-slate-500 font-medium">Status:</span>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs">
+          {/* Quick Status Filter Pills (Requirement 7) */}
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter("ALL");
+                setPage(1);
+              }}
+              className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all cursor-pointer ${
+                statusFilter === "ALL"
+                  ? "bg-white text-brand-600 shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
             >
-              <option value="ALL">All Statuses</option>
-              <option value="ACTIVE">Active</option>
-              <option value="ON_HOLD">On Hold</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="DROPPED">Dropped</option>
-            </select>
+              All
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter("ACTIVE");
+                setPage(1);
+              }}
+              className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all cursor-pointer ${
+                statusFilter === "ACTIVE"
+                  ? "bg-white text-emerald-600 shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Active
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter("FROZEN");
+                setPage(1);
+              }}
+              className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all cursor-pointer ${
+                statusFilter === "FROZEN"
+                  ? "bg-white text-amber-600 shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Frozen
+            </button>
           </div>
 
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200">
-            <span className="text-slate-500 font-medium">Mode:</span>
-            <select
-              value={modeFilter}
-              onChange={(e) => setModeFilter(e.target.value)}
-              className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
-            >
-              <option value="ALL">All Modes</option>
-              <option value="offline">Offline</option>
-              <option value="online">Online</option>
-              <option value="hybrid">Hybrid</option>
-            </select>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200">
+              <Filter className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-slate-500 font-medium">Status:</span>
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
+              >
+                <option value="ALL">All Statuses</option>
+                <option value="ACTIVE">Active</option>
+                <option value="FROZEN">Frozen</option>
+                <option value="ON_HOLD">On Hold</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="DROPPED">Dropped</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200">
+              <span className="text-slate-500 font-medium">Mode:</span>
+              <select
+                value={modeFilter}
+                onChange={(e) => {
+                  setModeFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
+              >
+                <option value="ALL">All Modes</option>
+                <option value="offline">Offline</option>
+                <option value="online">Online</option>
+                <option value="hybrid">Hybrid</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -460,7 +532,7 @@ export default function StudentDataCenterPage() {
                         <p className="font-mono text-xs font-bold text-brand-600">{student.student_code}</p>
                       </div>
                       <span className={`px-2.5 py-0.5 text-xs font-bold rounded-md border ${getStatusBadge(student.status)}`}>
-                        {student.status}
+                        {student.status === "FROZEN" ? "🟠 Frozen" : student.status === "ACTIVE" ? "🟢 Active" : student.status}
                       </span>
                     </div>
 
@@ -472,22 +544,46 @@ export default function StudentDataCenterPage() {
                         Batch: <strong className="text-slate-900">{student.batch?.name || "—"}</strong>
                       </p>
                       <p className="text-slate-500 font-mono">Phone: {student.phone}</p>
+                      {student.status === "FROZEN" && student.freeze_reason && (
+                        <p className="text-amber-800 text-[11px] bg-amber-50 p-1.5 rounded-lg border border-amber-200">
+                          <strong>Freeze Reason:</strong> {student.freeze_reason}
+                        </p>
+                      )}
                     </div>
 
-                    <div className="flex items-center justify-between pt-1">
+                    <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
                       <span className="text-xs font-bold text-slate-500">
-                        Portal:{" "}
-                        <strong className={isPortalActive ? "text-emerald-600" : "text-slate-400"}>
-                          {isPortalActive ? "Active" : "Inactive"}
+                        Status:{" "}
+                        <strong className={student.status === "FROZEN" ? "text-amber-600" : isPortalActive ? "text-emerald-600" : "text-slate-400"}>
+                          {student.status === "FROZEN" ? "Frozen" : isPortalActive ? "Active" : "Inactive"}
                         </strong>
                       </span>
 
-                      <Link
-                        href={`/dashboard/students/${student.id}`}
-                        className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-xs"
-                      >
-                        View Profile
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFreezeModalState({
+                              isOpen: true,
+                              student,
+                              action: student.status === "FROZEN" ? "unfreeze" : "freeze",
+                            })
+                          }
+                          className={`px-3 py-1.5 rounded-xl font-bold text-xs border transition-colors cursor-pointer ${
+                            student.status === "FROZEN"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                              : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                          }`}
+                        >
+                          {student.status === "FROZEN" ? "Unfreeze" : "Freeze"}
+                        </button>
+                        <Link
+                          href={`/dashboard/students/${student.id}`}
+                          className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-xs"
+                        >
+                          View Profile
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 );
@@ -515,6 +611,7 @@ export default function StudentDataCenterPage() {
                   </th>
                   <th className="px-6 py-3.5">Student</th>
                   <th className="px-6 py-3.5">Student ID</th>
+                  <th className="px-6 py-3.5">Status</th>
                   <th className="px-6 py-3.5">Course</th>
                   <th className="px-6 py-3.5">Batch</th>
                   <th className="px-6 py-3.5">Portal</th>
@@ -588,19 +685,15 @@ export default function StudentDataCenterPage() {
                       },
                     },
                     {
-                      label: isPortalActive ? "Deactivate Account" : "Reactivate Account",
-                      icon: UserX,
-                      onClick: async () => {
-                        try {
-                          const res = await fetch(`/api/students/${student.id}/toggle-portal`, { method: "POST" });
-                          const data = await res.json();
-                          if (data.success) {
-                            setToastMessage(`Portal account ${data.status === "ACTIVE" ? "reactivated" : "deactivated"}.`);
-                            fetchStudents();
-                          }
-                        } catch (err) {
-                          console.error(err);
-                        }
+                      label: student.status === "FROZEN" ? "Unfreeze Student" : "Freeze Student",
+                      icon: student.status === "FROZEN" ? ShieldCheck : ShieldAlert,
+                      danger: student.status !== "FROZEN",
+                      onClick: () => {
+                        setFreezeModalState({
+                          isOpen: true,
+                          student,
+                          action: student.status === "FROZEN" ? "unfreeze" : "freeze",
+                        });
                       },
                     },
                     {
@@ -647,7 +740,25 @@ export default function StudentDataCenterPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 font-mono font-bold text-brand-600 text-xs">
-                        {student.student_code}
+                        <div>{student.student_code}</div>
+                        {student.status === "FROZEN" && (
+                          <span className="inline-block text-[10px] font-sans font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 mt-1">
+                            Frozen
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`px-2.5 py-0.5 text-xs font-bold rounded-md border ${getStatusBadge(
+                            student.status
+                          )}`}
+                        >
+                          {student.status === "FROZEN"
+                            ? "🟠 Frozen"
+                            : student.status === "ACTIVE"
+                            ? "🟢 Active"
+                            : student.status}
+                        </span>
                       </td>
                       <td className="px-6 py-4 text-xs font-semibold text-slate-800">
                         {student.course?.name || <span className="text-slate-400 font-mono font-normal">—</span>}
@@ -771,6 +882,21 @@ export default function StudentDataCenterPage() {
           studentId={resettingStudent.id}
           studentName={resettingStudent.name}
           studentCode={resettingStudent.student_code}
+        />
+      )}
+
+      {/* Freeze / Unfreeze Student Modal */}
+      {freezeModalState.isOpen && freezeModalState.student && (
+        <FreezeStudentModal
+          isOpen={freezeModalState.isOpen}
+          onClose={() => setFreezeModalState({ isOpen: false, student: null, action: "freeze" })}
+          onSuccess={() => {
+            const actionVerb = freezeModalState.action === "freeze" ? "frozen" : "reactivated";
+            setToastMessage(`Student ${freezeModalState.student?.name} has been ${actionVerb}.`);
+            fetchStudents();
+          }}
+          student={freezeModalState.student}
+          action={freezeModalState.action}
         />
       )}
 

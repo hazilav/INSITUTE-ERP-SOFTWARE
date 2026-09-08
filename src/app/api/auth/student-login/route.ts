@@ -52,6 +52,13 @@ export async function POST(request: Request) {
     }
 
     // 3. Status & Deactivation Guard
+    if (student.status === "FROZEN") {
+      return NextResponse.json(
+        { error: "Your account is temporarily inactive. Please contact your institute administrator." },
+        { status: 403 }
+      );
+    }
+
     if (student.status === "ARCHIVED" || student.user.status !== "ACTIVE") {
       return NextResponse.json(
         { error: "Your student portal account has been deactivated. Please contact your institute administrator." },

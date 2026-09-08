@@ -60,6 +60,13 @@ export async function GET(
         return NextResponse.json({ error: "Student profile not found." }, { status: 403 });
       }
 
+      if (student.status === "FROZEN") {
+        return NextResponse.json(
+          { error: "Your account is temporarily inactive. Please contact your institute administrator." },
+          { status: 403 }
+        );
+      }
+
       if (student.status !== "ACTIVE") {
         return NextResponse.json({ error: "Your student enrollment is not active." }, { status: 403 });
       }

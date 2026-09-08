@@ -19,7 +19,7 @@ export async function getAuthenticatedStudent() {
     },
   });
 
-  if (!student || student.status === "ARCHIVED") return null;
+  if (!student || student.status === "ARCHIVED" || student.status === "FROZEN") return null;
 
   return {
     user,

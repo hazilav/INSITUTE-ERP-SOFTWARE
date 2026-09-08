@@ -44,11 +44,6 @@ function formatTime(seconds: number): string {
 
 function getEmbedUrl(url: string): string | null {
   if (!url) return null;
-  // Google Drive URL
-  const gDriveMatch = url.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=)|docs\.google\.com\/file\/d\/)([a-zA-Z0-9_-]+)/i);
-  if (gDriveMatch && gDriveMatch[1]) {
-    return `https://drive.google.com/file/d/${gDriveMatch[1]}/preview`;
-  }
   // YouTube watch or short URL
   const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
   if (ytMatch && ytMatch[1]) {

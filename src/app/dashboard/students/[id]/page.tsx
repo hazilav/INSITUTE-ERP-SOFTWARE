@@ -177,6 +177,9 @@ export default async function StudentProfilePage({
       student={{
         ...student,
         dob: student.dob ? student.dob.toISOString() : null,
+        frozen_at: student.frozen_at ? student.frozen_at.toISOString() : null,
+        freeze_reason: student.freeze_reason,
+        frozen_by: student.frozen_by,
         created_at: student.created_at.toISOString(),
         updated_at: student.updated_at.toISOString(),
         user: student.user

@@ -1,16 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { GraduationCap, Lock, AlertCircle, ArrowRight, ShieldCheck } from "lucide-react";
 
 export default function StudentLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isInactive = searchParams.get("error") === "inactive";
   const [studentCode, setStudentCode] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(
+    isInactive ? "Your account is temporarily inactive. Please contact your institute administrator." : ""
+  );
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

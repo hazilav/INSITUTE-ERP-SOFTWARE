@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getAuthenticatedStudent } from "@/lib/student";
+import { getAuthenticatedUser } from "@/lib/auth";
 import StudentLayout from "@/components/StudentLayout";
 
 interface StudentPortalWrapperProps {
@@ -12,6 +13,10 @@ export default async function StudentPortalWrapper({
   const studentContext = await getAuthenticatedStudent();
 
   if (!studentContext) {
+    const authContext = await getAuthenticatedUser();
+    if (authContext && authContext.user.role === "STUDENT") {
+      redirect("/student/login?error=inactive");
+    }
     redirect("/student/login");
   }
 

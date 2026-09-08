@@ -135,9 +135,6 @@ export async function GET(request: Request) {
       limit,
       totalPages: Math.ceil(total / limit),
       activeCourses,
-      instituteEmail: institute.email || user.email,
-      instituteName: institute.name,
-      userEmail: user.email,
     });
   } catch (error: any) {
     console.error("GET recorded-classes error:", error);

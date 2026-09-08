@@ -43,11 +43,13 @@ import {
   Send,
   RefreshCw,
   X,
+  ShieldAlert,
 } from "lucide-react";
 import EditStudentModal from "@/components/EditStudentModal";
 import ArchiveStudentModal from "@/components/ArchiveStudentModal";
 import ResetPasswordModal from "@/components/ResetPasswordModal";
 import PaymentReceiptModal from "@/components/PaymentReceiptModal";
+import FreezeStudentModal from "@/components/FreezeStudentModal";
 import Toast from "@/components/Toast";
 import { calculateGrade } from "@/lib/grading";
 import { exportToCSV } from "@/lib/export";
@@ -166,6 +168,9 @@ interface StudentProfileClientProps {
     parent_phone?: string | null;
     learning_mode: string;
     status: string;
+    freeze_reason?: string | null;
+    frozen_at?: string | null;
+    frozen_by?: string | null;
     created_at: string;
     updated_at?: string | null;
     course_id?: string | null;
@@ -209,6 +214,8 @@ export default function StudentProfileClient({
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [archiveModalOpen, setArchiveModalOpen] = useState(false);
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
+  const [freezeModalOpen, setFreezeModalOpen] = useState(false);
+  const [freezeAction, setFreezeAction] = useState<"freeze" | "unfreeze">("freeze");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [tempCredentials, setTempCredentials] = useState<any | null>(null);
 
@@ -315,7 +322,9 @@ export default function StudentProfileClient({
   const getStatusBadgeStyle = (status: string) => {
     switch (status) {
       case "ACTIVE":
-        return "bg-emerald-100 text-emerald-800 border-emerald-200";
+        return "bg-emerald-100 text-emerald-800 border-emerald-200 font-bold";
+      case "FROZEN":
+        return "bg-amber-100 text-amber-800 border-amber-300 font-bold";
       case "ON_HOLD":
         return "bg-amber-100 text-amber-800 border-amber-200";
       case "COMPLETED":
@@ -436,7 +445,7 @@ export default function StudentProfileClient({
                 {student.name}
               </h1>
               <span className={`px-3 py-1 text-xs font-semibold rounded-lg border ${getStatusBadgeStyle(student.status)}`}>
-                {student.status}
+                {student.status === "FROZEN" ? "🟠 Frozen" : student.status === "ACTIVE" ? "🟢 Active" : student.status}
               </span>
               <span className={`px-3 py-1 text-xs font-semibold rounded-lg border ${modeBadge.style}`}>
                 {modeBadge.label}
@@ -472,10 +481,34 @@ export default function StudentProfileClient({
           <div className="flex flex-wrap items-center gap-2 self-stretch md:self-auto">
             <button
               onClick={() => setEditModalOpen(true)}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs transition-colors cursor-pointer"
             >
               <Edit className="w-3.5 h-3.5 text-slate-500" /> Edit
             </button>
+
+            {student.status === "FROZEN" ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setFreezeAction("unfreeze");
+                  setFreezeModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-bold text-xs transition-colors cursor-pointer"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Unfreeze Student
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setFreezeAction("freeze");
+                  setFreezeModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 font-bold text-xs transition-colors cursor-pointer"
+              >
+                <ShieldAlert className="w-3.5 h-3.5 text-amber-600" /> Freeze Student
+              </button>
+            )}
 
             <Link
               href={`/dashboard/attendance?student_id=${student.id}`}
@@ -500,13 +533,72 @@ export default function StudentProfileClient({
 
             <button
               onClick={handleShareLoginDirect}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-xs transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
             >
               <Share2 className="w-3.5 h-3.5" /> Share Login
             </button>
           </div>
         )}
       </div>
+
+      {/* Frozen Student Details Banner (Requirement 8) */}
+      {student.status === "FROZEN" && (
+        <div className="bg-amber-50/90 border border-amber-300 rounded-3xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-5 animate-in fade-in">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+              <ShieldAlert className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-extrabold text-amber-950">Student Account is Temporarily Frozen</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200/80 text-amber-900 uppercase">
+                  Inactive
+                </span>
+              </div>
+              <p className="text-xs text-amber-800">
+                This student cannot log in or access classes in the Student Portal. All historical data remains fully preserved.
+              </p>
+              <div className="pt-2 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-amber-900 font-medium">
+                <div>
+                  <span className="text-amber-700 block text-[11px] uppercase tracking-wider font-bold">Frozen On:</span>
+                  <span className="font-bold">
+                    {student.frozen_at
+                      ? new Date(student.frozen_at).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "—"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-amber-700 block text-[11px] uppercase tracking-wider font-bold">Reason:</span>
+                  <span className="font-bold">{student.freeze_reason || "None specified"}</span>
+                </div>
+                <div>
+                  <span className="text-amber-700 block text-[11px] uppercase tracking-wider font-bold">Frozen By:</span>
+                  <span className="font-bold">{student.frozen_by || "Administrator"}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {canManage && (
+            <button
+              type="button"
+              onClick={() => {
+                setFreezeAction("unfreeze");
+                setFreezeModalOpen(true);
+              }}
+              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs shadow-xs transition-colors flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+            >
+              <ShieldCheck className="w-4 h-4" /> Unfreeze Student
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Summary Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -1105,6 +1197,21 @@ export default function StudentProfileClient({
           </div>
         )}
       </Modal>
+      )}
+
+      {/* Freeze / Unfreeze Student Modal */}
+      {freezeModalOpen && (
+        <FreezeStudentModal
+          isOpen={freezeModalOpen}
+          onClose={() => setFreezeModalOpen(false)}
+          onSuccess={() => {
+            const actionVerb = freezeAction === "freeze" ? "frozen" : "reactivated";
+            setToastMessage(`Student account has been ${actionVerb}.`);
+            router.refresh();
+          }}
+          student={student}
+          action={freezeAction}
+        />
       )}
 
       {/* Toast Notification */}

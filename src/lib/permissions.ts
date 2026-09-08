@@ -8,6 +8,8 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "students.view",
     "students.edit",
     "students.manage",
+    "students.freeze",
+    "students.unfreeze",
     "courses.view",
     "courses.manage",
     "batches.view",
@@ -163,3 +165,34 @@ export function canStaffPerformRecordedClassAction(params: {
 
   return false;
 }
+
+export function canUserManageStudentFreeze(params: {
+  role: string;
+  staffPermissions?: string | string[] | null;
+  action: "freeze" | "unfreeze";
+}): boolean {
+  const { role, staffPermissions, action } = params;
+
+  if (role === "OWNER" || role === "ADMIN") {
+    return true;
+  }
+
+  if (role !== "STAFF" && role !== "MENTOR") {
+    return false;
+  }
+
+  let permsList: string[] = [];
+  if (Array.isArray(staffPermissions)) {
+    permsList = staffPermissions.map((p) => p.toLowerCase());
+  } else if (typeof staffPermissions === "string") {
+    permsList = staffPermissions.split(",").map((p) => p.trim().toLowerCase());
+  }
+
+  const permKey = action === "freeze" ? "students.freeze" : "students.unfreeze";
+  return (
+    permsList.includes(permKey) ||
+    permsList.includes("students.manage") ||
+    permsList.includes("*")
+  );
+}
+

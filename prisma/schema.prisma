@@ -295,7 +295,10 @@ model Student {
   parent_name   String?
   parent_phone  String?
   learning_mode String    @default("hybrid") // offline, online, hybrid
-  status        String    @default("ACTIVE") // ACTIVE, ON_HOLD, COMPLETED, DROPPED, ARCHIVED
+  status        String    @default("ACTIVE") // ACTIVE, FROZEN, ON_HOLD, COMPLETED, DROPPED, ARCHIVED
+  freeze_reason String?
+  frozen_at     DateTime?
+  frozen_by     String?
   is_archived   Boolean   @default(false)
   created_at    DateTime  @default(now())
   updated_at    DateTime  @updatedAt
