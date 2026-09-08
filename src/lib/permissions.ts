@@ -44,8 +44,6 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "activities.view",
     "activities.manage",
     "marks.view",
-    "fees.view",
-    "fees.manage",
     "staff.view",
     "recorded_classes.view",
   ],
@@ -194,5 +192,89 @@ export function canUserManageStudentFreeze(params: {
     permsList.includes("students.manage") ||
     permsList.includes("*")
   );
+}
+
+export function canUserViewFees(params: {
+  role: string;
+  staffPermissions?: string | string[] | null;
+  assignedCourseId?: string | null;
+  assignedBatchId?: string | null;
+  studentCourseId?: string | null;
+  studentBatchId?: string | null;
+}): boolean {
+  const {
+    role,
+    staffPermissions,
+    assignedCourseId,
+    assignedBatchId,
+    studentCourseId,
+    studentBatchId,
+  } = params;
+
+  if (role === "OWNER" || role === "ADMIN") {
+    return true;
+  }
+
+  if (role === "STUDENT") {
+    return true; // Self student access handled separately via student_id isolation
+  }
+
+  if (role === "MENTOR") {
+    return false; // Mentors have no financial access
+  }
+
+  if (role === "STAFF") {
+    let permsList: string[] = [];
+    if (Array.isArray(staffPermissions)) {
+      permsList = staffPermissions.map((p) => p.toLowerCase().trim());
+    } else if (typeof staffPermissions === "string") {
+      permsList = staffPermissions.split(",").map((p) => p.toLowerCase().trim());
+    }
+
+    const hasPermission =
+      permsList.includes("fees.view") ||
+      permsList.includes("fees") ||
+      permsList.includes("*");
+
+    if (!hasPermission) {
+      return false;
+    }
+
+    // If student course/batch provided, staff must be assigned
+    if (studentCourseId && assignedCourseId && studentCourseId !== assignedCourseId) {
+      return false;
+    }
+    if (studentBatchId && assignedBatchId && studentBatchId !== assignedBatchId) {
+      return false;
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
+export function canUserManageFees(params: {
+  role: string;
+  staffPermissions?: string | string[] | null;
+}): boolean {
+  const { role, staffPermissions } = params;
+
+  if (role === "OWNER" || role === "ADMIN") {
+    return true;
+  }
+
+  if (role === "STAFF") {
+    let permsList: string[] = [];
+    if (Array.isArray(staffPermissions)) {
+      permsList = staffPermissions.map((p) => p.toLowerCase().trim());
+    } else if (typeof staffPermissions === "string") {
+      permsList = staffPermissions.split(",").map((p) => p.toLowerCase().trim());
+    }
+
+    return permsList.includes("fees.manage") || permsList.includes("*");
+  }
+
+  return false;
 }
 

@@ -15,9 +15,24 @@ export async function GET(request: Request) {
 
     const { user, institute } = authContext;
 
-    // Mentor Role Check: Mentors have no financial access by default
-    if (user.role === "MENTOR") {
-      return NextResponse.json({ error: "Forbidden: Mentors do not have financial access." }, { status: 403 });
+    let staffProfile = null;
+    if (user.role === "STAFF") {
+      staffProfile = await db.staffProfile.findFirst({
+        where: { user_id: user.id, institute_id: institute.id },
+      });
+    }
+
+    const { canUserViewFees } = await import("@/lib/permissions");
+    if (
+      !canUserViewFees({
+        role: user.role,
+        staffPermissions: staffProfile?.permissions,
+      })
+    ) {
+      return NextResponse.json(
+        { error: "Forbidden: You do not have financial access." },
+        { status: 403 }
+      );
     }
 
     const { searchParams } = new URL(request.url);
@@ -36,6 +51,7 @@ export async function GET(request: Request) {
         return NextResponse.json({
           success: true,
           feePlans: [],
+          invoices: [],
           metrics: { totalExpected: 0, totalCollected: 0, totalPending: 0, overdue: 0, dueSoon: 0 },
         });
       }
@@ -44,6 +60,9 @@ export async function GET(request: Request) {
       if (courseFilter !== "ALL") whereCondition.course_id = courseFilter;
       if (batchFilter !== "ALL") whereCondition.batch_id = batchFilter;
       if (statusFilter !== "ALL") whereCondition.status = statusFilter;
+      if (user.role === "STAFF" && staffProfile?.assigned_course_id) {
+        whereCondition.course_id = staffProfile.assigned_course_id;
+      }
     }
 
     if (search) {
@@ -56,8 +75,8 @@ export async function GET(request: Request) {
       };
     }
 
-    // Execute feePlans list, financial metrics scan, active courses, and batches in parallel
-    const [feePlans, allInstitutePlans, activeCourses, activeBatches] = await Promise.all([
+    // Execute feePlans list, invoices, metrics scan, active courses, and batches in parallel
+    const [feePlans, invoices, allInstitutePlans, allInvoices, activeCourses, activeBatches] = await Promise.all([
       db.feePlan.findMany({
         where: whereCondition,
         include: {
@@ -84,6 +103,32 @@ export async function GET(request: Request) {
         orderBy: { created_at: "desc" },
         take: 100,
       }),
+      db.invoice.findMany({
+        where: {
+          institute_id: institute.id,
+          ...(whereCondition.student_id && { student_id: whereCondition.student_id }),
+          ...(whereCondition.course_id && { course_id: whereCondition.course_id }),
+          ...(statusFilter !== "ALL" && { status: statusFilter }),
+        },
+        include: {
+          student: {
+            select: {
+              id: true,
+              student_code: true,
+              name: true,
+              phone: true,
+              email: true,
+            },
+          },
+          course: { select: { id: true, name: true, code: true } },
+          payments: {
+            where: { is_voided: false },
+            select: { id: true, amount: true, receipt_number: true, payment_date: true },
+          },
+        },
+        orderBy: { created_at: "desc" },
+        take: 100,
+      }),
       db.feePlan.findMany({
         where: { institute_id: institute.id },
         select: {
@@ -95,6 +140,16 @@ export async function GET(request: Request) {
             select: { due_date: true, status: true },
             orderBy: { due_date: "asc" },
           },
+        },
+      }),
+      db.invoice.findMany({
+        where: { institute_id: institute.id, is_cancelled: false },
+        select: {
+          final_amount: true,
+          paid_amount: true,
+          outstanding_amount: true,
+          due_date: true,
+          status: true,
         },
       }),
       db.course.findMany({
@@ -118,6 +173,7 @@ export async function GET(request: Request) {
     let overdueAmount = 0;
     let dueSoonCount = 0;
 
+    // Aggregate from FeePlans
     allInstitutePlans.forEach((plan) => {
       totalExpected += plan.final_fee;
       totalCollected += plan.amount_paid;
@@ -136,9 +192,25 @@ export async function GET(request: Request) {
       });
     });
 
+    // Aggregate from Invoices
+    allInvoices.forEach((inv) => {
+      totalExpected += inv.final_amount;
+      totalCollected += inv.paid_amount;
+      totalPending += inv.outstanding_amount;
+
+      if (inv.outstanding_amount > 0 && new Date(inv.due_date) < now) {
+        overdueAmount += inv.outstanding_amount;
+      }
+
+      if (inv.outstanding_amount > 0 && new Date(inv.due_date) >= now && new Date(inv.due_date) <= sevenDaysFromNow) {
+        dueSoonCount++;
+      }
+    });
+
     return NextResponse.json({
       success: true,
       feePlans,
+      invoices,
       metrics: {
         totalExpected: parseFloat(totalExpected.toFixed(2)),
         totalCollected: parseFloat(totalCollected.toFixed(2)),

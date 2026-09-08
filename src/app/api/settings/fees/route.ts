@@ -15,7 +15,15 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { default_currency, payment_methods, fee_reminder_days } = body;
+    const {
+      default_currency,
+      payment_methods,
+      fee_reminder_days,
+      tax_enabled,
+      tax_name,
+      tax_percentage,
+      tax_number,
+    } = body;
 
     const updated = await db.institute.update({
       where: { id: institute.id },
@@ -23,6 +31,10 @@ export async function PUT(request: Request) {
         ...(default_currency && { default_currency: default_currency.trim() }),
         ...(payment_methods !== undefined && { payment_methods: payment_methods }),
         ...(fee_reminder_days !== undefined && { fee_reminder_days: parseInt(fee_reminder_days) }),
+        ...(tax_enabled !== undefined && { tax_enabled: Boolean(tax_enabled) }),
+        ...(tax_name !== undefined && { tax_name: tax_name.trim() }),
+        ...(tax_percentage !== undefined && { tax_percentage: parseFloat(tax_percentage) || 0 }),
+        ...(tax_number !== undefined && { tax_number: tax_number.trim() }),
       },
     });
 

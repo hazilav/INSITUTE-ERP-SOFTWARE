@@ -155,7 +155,7 @@ export default function MobileBottomNav({ role }: MobileBottomNavProps) {
     { name: "Batches", href: "/dashboard/batches", icon: Layers },
     { name: "Classes", href: "/dashboard/classes", icon: GraduationCap },
     { name: "Attendance", href: "/dashboard/attendance", icon: CalendarCheck },
-    { name: "Fees", href: "/dashboard/fees", icon: BadgeDollarSign },
+    { name: "Fees & Payments", href: "/dashboard/fees", icon: BadgeDollarSign },
     { name: "Staff & Mentors", href: "/dashboard/staff", icon: UserCheck },
     { name: "Reports", href: "/dashboard/reports", icon: BarChart3 },
     { name: "Documents", href: "/dashboard/students/documents", icon: FileText },

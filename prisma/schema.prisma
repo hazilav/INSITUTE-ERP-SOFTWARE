@@ -45,6 +45,10 @@ model Institute {
   portal_enabled      Boolean  @default(true)
   student_login_enabled Boolean @default(true)
   require_first_login_pwd_change Boolean @default(false)
+  tax_enabled         Boolean  @default(false)
+  tax_name            String?  @default("GST")
+  tax_percentage      Float?   @default(0.0)
+  tax_number          String?
   created_at          DateTime @default(now())
   updated_at          DateTime @updatedAt
 
@@ -62,6 +66,7 @@ model Institute {
   fee_plans                FeePlan[]
   installments             Installment[]
   payments                 Payment[]
+  invoices                 Invoice[]
   staff_profiles           StaffProfile[]
   mentor_assignments       MentorAssignment[]
   student_tasks            StudentTask[]
@@ -118,6 +123,9 @@ model User {
   uploaded_student_documents StudentDocument[] @relation("UploadedStudentDocuments")
   generated_certificates   Certificate[]     @relation("GeneratedCertificates")
   created_recorded_contents RecordedContent[] @relation("RecordedContentCreator")
+  created_invoices         Invoice[]         @relation("CreatedInvoices")
+  cancelled_invoices       Invoice[]         @relation("CancelledInvoices")
+  voided_payments          Payment[]         @relation("VoidedPayments")
 
   @@unique([institute_id, email])
   @@map("users")
@@ -157,6 +165,7 @@ model Course {
   activities         Activity[]
   assessments        Assessment[]
   fee_plans          FeePlan[]
+  invoices           Invoice[]
   mentor_assignments MentorAssignment[]
   recurring_schedules RecurringSchedule[]
   certificates       Certificate[]
@@ -313,6 +322,7 @@ model Student {
   assessment_results   AssessmentResult[]
   fee_plans            FeePlan[]
   payments             Payment[]
+  invoices             Invoice[]
   tasks                StudentTask[]
   content_progress     StudentContentProgress[]
   documents            StudentDocument[]
@@ -511,6 +521,7 @@ model FeePlan {
   batch        Batch?        @relation(fields: [batch_id], references: [id], onDelete: SetNull)
   installments Installment[]
   payments     Payment[]
+  invoices     Invoice[]
 
   @@index([institute_id, student_id])
   @@index([institute_id, status])
@@ -537,30 +548,79 @@ model Installment {
   @@map("installments")
 }
 
+model Invoice {
+  id                 String    @id @default(cuid())
+  institute_id       String
+  student_id         String
+  course_id          String?
+  fee_plan_id        String?
+  invoice_number     String
+  invoice_date       DateTime  @default(now())
+  due_date           DateTime
+  description        String?
+  amount             Float     @default(0.0)
+  discount           Float     @default(0.0)
+  tax                Float     @default(0.0)
+  final_amount       Float     @default(0.0)
+  paid_amount        Float     @default(0.0)
+  outstanding_amount Float     @default(0.0)
+  status             String    @default("Unpaid") // Unpaid, Partially Paid, Paid, Overdue, Cancelled
+  notes              String?
+  is_cancelled       Boolean   @default(false)
+  cancel_reason      String?
+  cancelled_at       DateTime?
+  cancelled_by_id    String?
+  created_by_id      String?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  institute    Institute  @relation(fields: [institute_id], references: [id], onDelete: Cascade)
+  student      Student    @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  course       Course?    @relation(fields: [course_id], references: [id], onDelete: SetNull)
+  fee_plan     FeePlan?   @relation(fields: [fee_plan_id], references: [id], onDelete: SetNull)
+  created_by   User?      @relation("CreatedInvoices", fields: [created_by_id], references: [id], onDelete: SetNull)
+  cancelled_by User?      @relation("CancelledInvoices", fields: [cancelled_by_id], references: [id], onDelete: SetNull)
+  payments     Payment[]
+
+  @@unique([institute_id, invoice_number])
+  @@index([institute_id, student_id])
+  @@index([institute_id, status])
+  @@index([institute_id, invoice_date])
+  @@map("invoices")
+}
+
 model Payment {
-  id               String   @id @default(cuid())
+  id               String    @id @default(cuid())
   institute_id     String
-  fee_plan_id      String
+  fee_plan_id      String?
   student_id       String
   installment_id   String?
+  invoice_id       String?
   receipt_number   String
   amount           Float
-  payment_date     DateTime @default(now())
-  payment_method   String   @default("UPI") // Cash, UPI, Bank Transfer, Card, Online Payment, Other
+  payment_date     DateTime  @default(now())
+  payment_method   String    @default("UPI") // Cash, UPI, Bank Transfer, Card, Online Payment, Other
   reference_number String?
   notes            String?
   recorded_by_id   String?
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
+  is_voided        Boolean   @default(false)
+  void_reason      String?
+  voided_at        DateTime?
+  voided_by_id     String?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
 
   institute   Institute    @relation(fields: [institute_id], references: [id], onDelete: Cascade)
-  fee_plan    FeePlan      @relation(fields: [fee_plan_id], references: [id], onDelete: Cascade)
+  fee_plan    FeePlan?     @relation(fields: [fee_plan_id], references: [id], onDelete: SetNull)
   student     Student      @relation(fields: [student_id], references: [id], onDelete: Cascade)
   installment Installment? @relation(fields: [installment_id], references: [id], onDelete: SetNull)
+  invoice     Invoice?     @relation(fields: [invoice_id], references: [id], onDelete: SetNull)
   recorded_by User?        @relation("RecordedPayments", fields: [recorded_by_id], references: [id], onDelete: SetNull)
+  voided_by   User?        @relation("VoidedPayments", fields: [voided_by_id], references: [id], onDelete: SetNull)
 
   @@unique([institute_id, receipt_number])
   @@index([institute_id, student_id])
+  @@index([institute_id, invoice_id])
   @@index([institute_id, payment_date])
   @@map("payments")
 }

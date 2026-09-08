@@ -62,7 +62,7 @@ export default function StudentLayout({
     { name: "Attendance", href: "/student/attendance", icon: CalendarCheck },
     { name: "Activities", href: "/student/activities", icon: ClipboardList },
     { name: "Marks", href: "/student/marks", icon: FileBarChart },
-    { name: "Fees", href: "/student/fees", icon: BadgeDollarSign },
+    { name: "Fees & Payments", href: "/student/fees", icon: BadgeDollarSign },
     { name: "Tasks", href: "/student/tasks", icon: CheckSquare },
     { name: "Certificates", href: "/student/certificates", icon: GraduationCap },
     { name: "Documents", href: "/student/documents", icon: ClipboardList },

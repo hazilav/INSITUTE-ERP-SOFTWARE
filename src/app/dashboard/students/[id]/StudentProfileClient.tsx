@@ -44,12 +44,22 @@ import {
   RefreshCw,
   X,
   ShieldAlert,
+  Plus,
+  Download,
+  Undo2,
+  FileText,
+  Receipt,
 } from "lucide-react";
 import EditStudentModal from "@/components/EditStudentModal";
 import ArchiveStudentModal from "@/components/ArchiveStudentModal";
 import ResetPasswordModal from "@/components/ResetPasswordModal";
 import PaymentReceiptModal from "@/components/PaymentReceiptModal";
 import FreezeStudentModal from "@/components/FreezeStudentModal";
+import CreateInvoiceModal from "@/components/CreateInvoiceModal";
+import RecordPaymentModal from "@/components/RecordPaymentModal";
+import InvoiceViewModal from "@/components/InvoiceViewModal";
+import CancelInvoiceModal from "@/components/CancelInvoiceModal";
+import VoidPaymentModal from "@/components/VoidPaymentModal";
 import Toast from "@/components/Toast";
 import { calculateGrade } from "@/lib/grading";
 import { exportToCSV } from "@/lib/export";
@@ -195,6 +205,9 @@ interface StudentProfileClientProps {
   studentActivitiesList?: StudentActivityItem[];
   studentMarksList?: StudentMarkItem[];
   studentFeePlan?: StudentFeePlan | null;
+  studentInvoices?: any[];
+  studentPayments?: any[];
+  instituteDetails?: any;
 }
 
 export default function StudentProfileClient({
@@ -207,6 +220,9 @@ export default function StudentProfileClient({
   studentActivitiesList = [],
   studentMarksList = [],
   studentFeePlan = null,
+  studentInvoices = [],
+  studentPayments = [],
+  instituteDetails = null,
 }: StudentProfileClientProps) {
   const router = useRouter();
 
@@ -218,6 +234,19 @@ export default function StudentProfileClient({
   const [freezeAction, setFreezeAction] = useState<"freeze" | "unfreeze">("freeze");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [tempCredentials, setTempCredentials] = useState<any | null>(null);
+
+  // Financial Modals State
+  const [createInvoiceModalOpen, setCreateInvoiceModalOpen] = useState(false);
+  const [recordPaymentModalOpen, setRecordPaymentModalOpen] = useState(false);
+  const [selectedInvoiceToPay, setSelectedInvoiceToPay] = useState<string | undefined>(undefined);
+  const [invoiceViewModalOpen, setInvoiceViewModalOpen] = useState(false);
+  const [selectedInvoiceForView, setSelectedInvoiceForView] = useState<any | null>(null);
+  const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+  const [selectedReceipt, setSelectedReceipt] = useState<any | null>(null);
+  const [cancelInvoiceModalOpen, setCancelInvoiceModalOpen] = useState(false);
+  const [selectedInvoiceToCancel, setSelectedInvoiceToCancel] = useState<any | null>(null);
+  const [voidPaymentModalOpen, setVoidPaymentModalOpen] = useState(false);
+  const [selectedPaymentToVoid, setSelectedPaymentToVoid] = useState<any | null>(null);
 
   const handleCopyID = () => {
     navigator.clipboard.writeText(student.student_code);
@@ -280,9 +309,6 @@ export default function StudentProfileClient({
     window.open(url, "_blank");
   };
 
-  // Receipt Modal State
-  const [receiptModalOpen, setReceiptModalOpen] = useState(false);
-  const [selectedReceipt, setSelectedReceipt] = useState<any>(null);
 
   const canManage = userRole === "OWNER" || userRole === "ADMIN";
 
@@ -897,146 +923,327 @@ export default function StudentProfileClient({
         </div>
       )}
 
-      {/* Fees Tab Content (Fully Functional) */}
-      {activeTab === "fees" && (
-        <div className="space-y-6">
-          {studentFeePlan ? (
-            <>
-              {/* Fee Summary Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-                <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
-                  <span className="text-[11px] font-semibold text-slate-400 uppercase">Course Fee</span>
-                  <p className="text-xl font-extrabold text-slate-900 mt-0.5 font-mono">
-                    {formatCurrency(studentFeePlan.course_fee)}
-                  </p>
-                </div>
+      {/* Fees & Invoices Tab Content */}
+      {activeTab === "fees" && (() => {
+        // Compute financial metrics from invoices (or fallback to feePlan)
+        let totalCourseFee = 0;
+        let totalPaid = 0;
+        let totalOutstanding = 0;
 
-                <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
-                  <span className="text-[11px] font-semibold text-slate-400 uppercase">Discount</span>
-                  <p className="text-xl font-extrabold text-purple-600 mt-0.5 font-mono">
-                    {studentFeePlan.discount_type === "percentage"
-                      ? `${studentFeePlan.discount_value}%`
-                      : formatCurrency(studentFeePlan.discount_value)}
-                  </p>
-                </div>
+        if (studentInvoices && studentInvoices.length > 0) {
+          studentInvoices.forEach((inv) => {
+            if (!inv.is_cancelled) {
+              totalCourseFee += inv.final_amount;
+              totalPaid += inv.paid_amount;
+              totalOutstanding += inv.outstanding_amount;
+            }
+          });
+        } else if (studentFeePlan) {
+          totalCourseFee = studentFeePlan.final_fee;
+          totalPaid = studentFeePlan.amount_paid;
+          totalOutstanding = studentFeePlan.balance;
+        }
 
-                <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
-                  <span className="text-[11px] font-semibold text-slate-400 uppercase">Final Fee</span>
-                  <p className="text-xl font-extrabold text-slate-900 mt-0.5 font-mono">
-                    {formatCurrency(studentFeePlan.final_fee)}
-                  </p>
-                </div>
+        const canManage = userRole === "OWNER" || userRole === "ADMIN";
 
-                <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
-                  <span className="text-[11px] font-semibold text-slate-400 uppercase">Amount Paid</span>
-                  <p className="text-xl font-extrabold text-emerald-600 mt-0.5 font-mono">
-                    {formatCurrency(studentFeePlan.amount_paid)}
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
-                  <span className="text-[11px] font-semibold text-slate-400 uppercase">Balance</span>
-                  <p className="text-xl font-extrabold text-brand-600 mt-0.5 font-mono">
-                    {formatCurrency(studentFeePlan.balance)}
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
-                  <span className="text-[11px] font-semibold text-slate-400 uppercase">Fee Status</span>
-                  <p className="text-sm font-extrabold text-slate-800 mt-1 capitalize">
-                    {studentFeePlan.status}
-                  </p>
-                </div>
+        return (
+          <div className="space-y-6">
+            {/* Header with Actions */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-2 border-b border-slate-100">
+              <div>
+                <h3 className="font-extrabold text-slate-900 text-lg sm:text-xl">
+                  Fees, Invoices & Payments
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Manage student tuition invoices, collection records, and official receipts
+                </p>
               </div>
 
-              {/* Installments Schedule Table */}
-              <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-4">
-                <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
-                  <Clock className="w-5 h-5 text-purple-600" />
-                  <h3 className="font-bold text-slate-900 text-base">Payment Installment Schedule</h3>
+              {canManage && (
+                <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                  <button
+                    onClick={() => setCreateInvoiceModalOpen(true)}
+                    className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" /> Create Invoice
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedInvoiceToPay(undefined);
+                      setRecordPaymentModalOpen(true);
+                    }}
+                    className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <CreditCard className="w-4 h-4" /> Record Payment
+                  </button>
                 </div>
+              )}
+            </div>
 
-                {studentFeePlan.installments.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm text-slate-600">
-                      <thead className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                        <tr>
-                          <th className="px-4 py-3">Installment</th>
-                          <th className="px-4 py-3 text-right">Amount</th>
-                          <th className="px-4 py-3">Due Date</th>
-                          <th className="px-4 py-3 text-right">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium text-xs">
-                        {studentFeePlan.installments.map((inst) => (
-                          <tr key={inst.id} className="hover:bg-slate-50/60">
-                            <td className="px-4 py-3 font-bold text-slate-900">{inst.name}</td>
-                            <td className="px-4 py-3 text-right font-mono font-bold text-slate-900">
-                              {formatCurrency(inst.amount)}
-                            </td>
-                            <td className="px-4 py-3 font-mono">
-                              {new Date(inst.due_date).toLocaleDateString("en-IN")}
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <span
-                                className={`px-2 py-0.5 font-bold rounded ${
-                                  inst.status === "Paid"
-                                    ? "bg-emerald-100 text-emerald-800"
-                                    : inst.status === "Overdue"
-                                    ? "bg-rose-100 text-rose-800"
-                                    : "bg-amber-100 text-amber-800"
-                                }`}
-                              >
-                                {inst.status}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-400">Single full payment schedule.</p>
+            {/* Section 1: Fee Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Total Course Fee
+                </span>
+                <p className="text-2xl font-black text-slate-900 mt-1 font-mono">
+                  {formatCurrency(totalCourseFee)}
+                </p>
+                <span className="text-[11px] text-slate-400 mt-0.5 block">
+                  Total invoiced tuition amount
+                </span>
+              </div>
+
+              <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs">
+                <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
+                  Total Paid
+                </span>
+                <p className="text-2xl font-black text-emerald-600 mt-1 font-mono">
+                  {formatCurrency(totalPaid)}
+                </p>
+                <span className="text-[11px] text-slate-400 mt-0.5 block">
+                  Total received & verified
+                </span>
+              </div>
+
+              <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs">
+                <span className="text-xs font-bold text-brand-700 uppercase tracking-wider">
+                  Total Outstanding
+                </span>
+                <p className="text-2xl font-black text-brand-700 mt-1 font-mono">
+                  {formatCurrency(totalOutstanding)}
+                </p>
+                <span className="text-[11px] text-slate-400 mt-0.5 block">
+                  Remaining balance due
+                </span>
+              </div>
+            </div>
+
+            {/* Invoices List Table */}
+            <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2.5">
+                  <Receipt className="w-5 h-5 text-brand-600" />
+                  <h4 className="font-bold text-slate-900 text-base">Invoices ({studentInvoices.length})</h4>
+                </div>
+                {canManage && (
+                  <button
+                    onClick={() => setCreateInvoiceModalOpen(true)}
+                    className="text-xs font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> New Invoice
+                  </button>
                 )}
               </div>
 
-              {/* Payment Receipts History Table */}
-              <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-4">
-                <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
-                  <Receipt className="w-5 h-5 text-emerald-600" />
-                  <h3 className="font-bold text-slate-900 text-base">Payment History Log & Receipts</h3>
-                </div>
-
-                {studentFeePlan.payments.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm text-slate-600">
-                      <thead className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                        <tr>
-                          <th className="px-4 py-3">Receipt #</th>
-                          <th className="px-4 py-3 text-right">Amount</th>
-                          <th className="px-4 py-3">Method</th>
-                          <th className="px-4 py-3">Date</th>
-                          <th className="px-4 py-3">Ref #</th>
-                          <th className="px-4 py-3 text-right">Action</th>
+              {studentInvoices.length > 0 ? (
+                <div className="overflow-x-auto w-full">
+                  <table className="w-full text-left text-xs text-slate-600 min-w-[650px]">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      <tr>
+                        <th className="px-4 py-3">Invoice #</th>
+                        <th className="px-4 py-3">Date</th>
+                        <th className="px-4 py-3">Due Date</th>
+                        <th className="px-4 py-3 text-right">Total</th>
+                        <th className="px-4 py-3 text-right">Paid</th>
+                        <th className="px-4 py-3 text-right">Outstanding</th>
+                        <th className="px-4 py-3 text-center">Status</th>
+                        <th className="px-4 py-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium">
+                      {studentInvoices.map((inv) => (
+                        <tr key={inv.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="px-4 py-3 font-mono font-bold text-brand-700">
+                            {inv.invoice_number}
+                          </td>
+                          <td className="px-4 py-3 font-mono text-slate-600">
+                            {new Date(inv.invoice_date).toLocaleDateString("en-IN")}
+                          </td>
+                          <td className="px-4 py-3 font-mono text-slate-600">
+                            {new Date(inv.due_date).toLocaleDateString("en-IN")}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono font-bold text-slate-900">
+                            {formatCurrency(inv.final_amount)}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono font-bold text-emerald-600">
+                            {formatCurrency(inv.paid_amount)}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono font-bold text-brand-700">
+                            {formatCurrency(inv.outstanding_amount)}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${
+                                inv.status === "Paid"
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                  : inv.status === "Overdue"
+                                  ? "bg-rose-50 text-rose-700 border-rose-200"
+                                  : inv.status === "Partially Paid"
+                                  ? "bg-blue-50 text-blue-700 border-blue-200"
+                                  : inv.status === "Cancelled"
+                                  ? "bg-slate-100 text-slate-600 border-slate-200"
+                                  : "bg-amber-50 text-amber-700 border-amber-200"
+                              }`}
+                            >
+                              ● {inv.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setSelectedInvoiceForView({
+                                    ...inv,
+                                    student: {
+                                      student_code: student.student_code,
+                                      name: student.name,
+                                      phone: student.phone,
+                                      email: student.email,
+                                      address: student.address,
+                                    },
+                                    course: inv.course || student.course,
+                                    institute: instituteDetails || { name: instituteName },
+                                  });
+                                  setInvoiceViewModalOpen(true);
+                                }}
+                                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] cursor-pointer"
+                              >
+                                View / PDF
+                              </button>
+                              {canManage && !inv.is_cancelled && inv.outstanding_amount > 0.001 && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedInvoiceToPay(inv.id);
+                                    setRecordPaymentModalOpen(true);
+                                  }}
+                                  className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-[11px] cursor-pointer"
+                                >
+                                  Pay
+                                </button>
+                              )}
+                              {canManage && !inv.is_cancelled && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedInvoiceToCancel({
+                                      id: inv.id,
+                                      invoice_number: inv.invoice_number,
+                                      student_name: student.name,
+                                      final_amount: inv.final_amount,
+                                      paid_amount: inv.paid_amount,
+                                    });
+                                    setCancelInvoiceModalOpen(true);
+                                  }}
+                                  className="px-2 py-1 rounded-lg text-slate-400 hover:text-rose-600 font-medium text-[11px] cursor-pointer"
+                                  title="Cancel Invoice"
+                                >
+                                  Cancel
+                                </button>
+                              )}
+                            </div>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium text-xs">
-                        {studentFeePlan.payments.map((p) => (
-                          <tr key={p.id} className="hover:bg-slate-50/60">
-                            <td className="px-4 py-3 font-mono font-bold text-brand-600">{p.receipt_number}</td>
-                            <td className="px-4 py-3 text-right font-mono font-bold text-emerald-600">
-                              {formatCurrency(p.amount)}
-                            </td>
-                            <td className="px-4 py-3">{p.payment_method}</td>
-                            <td className="px-4 py-3 font-mono">
-                              {new Date(p.payment_date).toLocaleDateString("en-IN")}
-                            </td>
-                            <td className="px-4 py-3 font-mono text-slate-500">{p.reference_number || "—"}</td>
-                            <td className="px-4 py-3 text-right">
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-8 text-center text-slate-400 text-xs">
+                  No invoices created for this student yet. Click{" "}
+                  <strong>[ + Create Invoice ]</strong> above to issue a fee invoice.
+                </div>
+              )}
+            </div>
+
+            {/* Section 14: Payment History Log & Receipts */}
+            <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2.5">
+                  <CreditCard className="w-5 h-5 text-emerald-600" />
+                  <h4 className="font-bold text-slate-900 text-base">
+                    Payment History & Receipts ({studentPayments.length})
+                  </h4>
+                </div>
+                {canManage && (
+                  <button
+                    onClick={() => {
+                      setSelectedInvoiceToPay(undefined);
+                      setRecordPaymentModalOpen(true);
+                    }}
+                    className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Record Payment
+                  </button>
+                )}
+              </div>
+
+              {studentPayments.length > 0 ? (
+                <div className="overflow-x-auto w-full">
+                  <table className="w-full text-left text-xs text-slate-600 min-w-[650px]">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      <tr>
+                        <th className="px-4 py-3">Date</th>
+                        <th className="px-4 py-3">Receipt #</th>
+                        <th className="px-4 py-3">Invoice</th>
+                        <th className="px-4 py-3 text-right">Amount</th>
+                        <th className="px-4 py-3">Method</th>
+                        <th className="px-4 py-3">Ref / Txn #</th>
+                        <th className="px-4 py-3">Recorded By</th>
+                        <th className="px-4 py-3 text-center">Status</th>
+                        <th className="px-4 py-3 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium">
+                      {studentPayments.map((p) => (
+                        <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="px-4 py-3 font-mono text-slate-600">
+                            {new Date(p.payment_date).toLocaleDateString("en-IN")}
+                          </td>
+                          <td className="px-4 py-3 font-mono font-bold text-brand-700">
+                            {p.receipt_number}
+                          </td>
+                          <td className="px-4 py-3 font-mono text-slate-600">
+                            {p.invoice?.invoice_number ? `#${p.invoice.invoice_number}` : "—"}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono font-bold text-emerald-600">
+                            {p.is_voided ? (
+                              <span className="line-through text-slate-400">
+                                {formatCurrency(p.amount)}
+                              </span>
+                            ) : (
+                              formatCurrency(p.amount)
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-slate-800">{p.payment_method}</td>
+                          <td className="px-4 py-3 font-mono text-slate-500">
+                            {p.reference_number || "—"}
+                          </td>
+                          <td className="px-4 py-3 text-slate-700">
+                            {p.recorded_by?.name || "Staff"}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            {p.is_voided ? (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                Voided
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                Valid
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
                               <button
                                 onClick={() => {
                                   setSelectedReceipt({
-                                    ...p,
+                                    id: p.id,
+                                    receipt_number: p.receipt_number,
+                                    amount: p.amount,
+                                    payment_date: p.payment_date,
+                                    payment_method: p.payment_method,
+                                    reference_number: p.reference_number,
+                                    notes: p.notes,
                                     student: {
                                       student_code: student.student_code,
                                       name: student.name,
@@ -1044,50 +1251,108 @@ export default function StudentProfileClient({
                                       email: student.email,
                                     },
                                     course_name: student.course?.name || "General Course",
-                                    remaining_balance: studentFeePlan.balance,
+                                    invoice_number: p.invoice?.invoice_number || null,
+                                    invoice_total: p.invoice?.final_amount,
+                                    previously_paid: p.invoice?.paid_amount ? p.invoice.paid_amount - p.amount : 0,
+                                    this_payment: p.amount,
+                                    remaining_balance: p.invoice?.outstanding_amount !== undefined ? p.invoice.outstanding_amount : totalOutstanding,
+                                    status: p.invoice?.status,
                                     recorded_by_name: p.recorded_by?.name || "Staff",
                                     institute_name: instituteName,
+                                    institute_logo: instituteDetails?.logo,
+                                    institute_address: [instituteDetails?.address, instituteDetails?.city].filter(Boolean).join(", "),
+                                    institute_phone: instituteDetails?.phone,
+                                    institute_email: instituteDetails?.email,
                                   });
                                   setReceiptModalOpen(true);
                                 }}
-                                className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs flex items-center gap-1.5 ml-auto"
+                                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] cursor-pointer"
                               >
-                                <Printer className="w-3.5 h-3.5" /> Print Receipt
+                                View Receipt
                               </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="p-8 text-center text-xs text-slate-400">
-                    No payments recorded for this student yet.
-                  </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="bg-white rounded-2xl p-12 text-center border border-slate-200/80 shadow-sm space-y-4 max-w-md mx-auto">
-              <div className="w-16 h-16 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center mx-auto shadow-sm">
-                <BadgeDollarSign className="w-8 h-8" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">No Fee Plan Assigned</h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  Create a fee plan in Fees & Payments module to manage tuition for this student.
-                </p>
-              </div>
-              <Link
-                href="/dashboard/fees"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-md shadow-brand-500/20 transition-all"
-              >
-                Go to Fees & Payments
-              </Link>
+                              {canManage && !p.is_voided && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedPaymentToVoid({
+                                      id: p.id,
+                                      receipt_number: p.receipt_number,
+                                      amount: p.amount,
+                                      student_name: student.name,
+                                    });
+                                    setVoidPaymentModalOpen(true);
+                                  }}
+                                  className="px-2 py-1 rounded-lg text-slate-400 hover:text-rose-600 font-medium text-[11px] cursor-pointer"
+                                  title="Void Payment"
+                                >
+                                  Void
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-8 text-center text-slate-400 text-xs">
+                  No payment receipts recorded for this student yet.
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      )}
+
+            {/* Installment Schedule (Legacy FeePlan fallback) */}
+            {studentFeePlan && studentFeePlan.installments && studentFeePlan.installments.length > 0 && (
+              <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+                <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
+                  <Clock className="w-5 h-5 text-purple-600" />
+                  <h4 className="font-bold text-slate-900 text-base">
+                    Fee Plan Installment Schedule
+                  </h4>
+                </div>
+                <div className="overflow-x-auto w-full">
+                  <table className="w-full text-left text-xs text-slate-600">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-400 uppercase">
+                      <tr>
+                        <th className="px-4 py-3">Installment</th>
+                        <th className="px-4 py-3 text-right">Amount</th>
+                        <th className="px-4 py-3">Due Date</th>
+                        <th className="px-4 py-3 text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium">
+                      {studentFeePlan.installments.map((inst) => (
+                        <tr key={inst.id} className="hover:bg-slate-50/60">
+                          <td className="px-4 py-3 font-bold text-slate-900">{inst.name}</td>
+                          <td className="px-4 py-3 text-right font-mono font-bold text-slate-900">
+                            {formatCurrency(inst.amount)}
+                          </td>
+                          <td className="px-4 py-3 font-mono">
+                            {new Date(inst.due_date).toLocaleDateString("en-IN")}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <span
+                              className={`px-2 py-0.5 font-bold rounded ${
+                                inst.status === "Paid"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : inst.status === "Overdue"
+                                  ? "bg-rose-100 text-rose-800"
+                                  : "bg-amber-100 text-amber-800"
+                              }`}
+                            >
+                              {inst.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Documents Tab */}
       {activeTab === "documents" && (
@@ -1214,12 +1479,71 @@ export default function StudentProfileClient({
         />
       )}
 
+      {/* Financial Modals */}
+      {createInvoiceModalOpen && (
+        <CreateInvoiceModal
+          isOpen={createInvoiceModalOpen}
+          onClose={() => setCreateInvoiceModalOpen(false)}
+          onSuccess={(inv) => {
+            setToastMessage("Invoice created successfully.");
+            router.refresh();
+          }}
+          preselectedStudentId={student.id}
+          preselectedCourseId={student.course?.id}
+        />
+      )}
+
+      {recordPaymentModalOpen && (
+        <RecordPaymentModal
+          isOpen={recordPaymentModalOpen}
+          onClose={() => setRecordPaymentModalOpen(false)}
+          onSuccess={(receipt) => {
+            setToastMessage("Payment recorded successfully.");
+            if (receipt) {
+              setSelectedReceipt(receipt);
+              setReceiptModalOpen(true);
+            }
+            router.refresh();
+          }}
+          preselectedStudentId={student.id}
+          preselectedInvoiceId={selectedInvoiceToPay}
+        />
+      )}
+
+      {invoiceViewModalOpen && (
+        <InvoiceViewModal
+          isOpen={invoiceViewModalOpen}
+          onClose={() => setInvoiceViewModalOpen(false)}
+          invoice={selectedInvoiceForView}
+        />
+      )}
+
+      {cancelInvoiceModalOpen && (
+        <CancelInvoiceModal
+          isOpen={cancelInvoiceModalOpen}
+          onClose={() => setCancelInvoiceModalOpen(false)}
+          onSuccess={() => {
+            setToastMessage("Invoice cancelled successfully.");
+            router.refresh();
+          }}
+          invoice={selectedInvoiceToCancel}
+        />
+      )}
+
+      {voidPaymentModalOpen && (
+        <VoidPaymentModal
+          isOpen={voidPaymentModalOpen}
+          onClose={() => setVoidPaymentModalOpen(false)}
+          onSuccess={() => {
+            setToastMessage("Payment voided successfully.");
+            router.refresh();
+          }}
+          payment={selectedPaymentToVoid}
+        />
+      )}
+
       {/* Toast Notification */}
       {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
     </div>
   );
-}
-
-function Receipt(props: any) {
-  return <Printer {...props} />;
 }

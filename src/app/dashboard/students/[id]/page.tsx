@@ -73,6 +73,25 @@ export default async function StudentProfilePage({
         },
         orderBy: { created_at: "desc" },
       },
+      invoices: {
+        include: {
+          course: { select: { id: true, name: true, code: true } },
+          payments: {
+            where: { is_voided: false },
+            include: { recorded_by: { select: { name: true } } },
+            orderBy: { payment_date: "desc" },
+          },
+        },
+        orderBy: { invoice_date: "desc" },
+      },
+      payments: {
+        include: {
+          invoice: { select: { id: true, invoice_number: true, final_amount: true, paid_amount: true, outstanding_amount: true } },
+          recorded_by: { select: { id: true, name: true } },
+          voided_by: { select: { id: true, name: true } },
+        },
+        orderBy: { payment_date: "desc" },
+      },
     },
   });
 
@@ -170,6 +189,29 @@ export default async function StudentProfilePage({
       }
     : null;
 
+  // Format student Invoices
+  const studentInvoices = (student.invoices || []).map((inv) => ({
+    ...inv,
+    invoice_date: inv.invoice_date.toISOString(),
+    due_date: inv.due_date.toISOString(),
+    cancelled_at: inv.cancelled_at ? inv.cancelled_at.toISOString() : null,
+    created_at: inv.created_at.toISOString(),
+    updated_at: inv.updated_at.toISOString(),
+    payments: (inv.payments || []).map((p) => ({
+      ...p,
+      payment_date: p.payment_date.toISOString(),
+    })),
+  }));
+
+  // Format student Payments
+  const studentPayments = (student.payments || []).map((p) => ({
+    ...p,
+    payment_date: p.payment_date.toISOString(),
+    voided_at: p.voided_at ? p.voided_at.toISOString() : null,
+    created_at: p.created_at.toISOString(),
+    updated_at: p.updated_at.toISOString(),
+  }));
+
   const activeTab = searchParams.tab || "overview";
 
   return (
@@ -206,7 +248,22 @@ export default async function StudentProfilePage({
       studentActivitiesList={studentActivitiesList}
       studentMarksList={studentMarksList}
       studentFeePlan={activeFeePlan}
+      studentInvoices={studentInvoices}
+      studentPayments={studentPayments}
       instituteName={institute.name}
+      instituteDetails={{
+        name: institute.name,
+        logo: institute.logo,
+        phone: institute.phone,
+        email: institute.email,
+        website: institute.website,
+        address: institute.address,
+        city: (institute as any).city || null,
+        state: (institute as any).state || null,
+        country: (institute as any).country || null,
+        tax_number: (institute as any).tax_number || null,
+        tax_name: (institute as any).tax_name || null,
+      }}
       userRole={user.role}
       activeTab={activeTab}
     />

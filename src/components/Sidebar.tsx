@@ -265,7 +265,7 @@ export default function Sidebar({
             }`}
           >
             <BadgeDollarSign className="w-5 h-5 shrink-0" />
-            <span>Fees</span>
+            <span>Fees & Payments</span>
           </Link>
 
           <Link
