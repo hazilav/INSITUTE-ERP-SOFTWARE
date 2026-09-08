@@ -23,6 +23,9 @@ import {
   Calendar,
   Image as ImageIcon,
   ChevronLeft,
+  ExternalLink,
+  Folder,
+  Link2,
 } from "lucide-react";
 import ErrorState from "@/components/ErrorState";
 import Modal from "@/components/Modal";
@@ -63,11 +66,24 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function extractGoogleDriveFileId(input: string): string | null {
+  if (!input) return null;
+  const trimmed = input.trim();
+  const match = trimmed.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=)|docs\.google\.com\/file\/d\/)([a-zA-Z0-9_-]+)/i);
+  if (match && match[1]) return match[1];
+  if (/^[a-zA-Z0-9_-]{25,}$/.test(trimmed)) {
+    return trimmed;
+  }
+  return null;
+}
+
 export default function RecordedClassesPage() {
   const [classes, setClasses] = useState<RecordedClassItem[]>([]);
   const [activeCourses, setActiveCourses] = useState<SelectOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [instituteEmail, setInstituteEmail] = useState("");
+  const [userEmail, setUserEmail] = useState("");
 
   // Pagination & Filters
   const [search, setSearch] = useState("");
@@ -101,8 +117,14 @@ export default function RecordedClassesPage() {
   const [formPublishStatus, setFormPublishStatus] = useState("Published");
   const [formDuration, setFormDuration] = useState("45 mins");
 
-  // Video Source (Direct File Upload vs URL)
-  const [videoSourceType, setVideoSourceType] = useState<"upload" | "url">("upload");
+  // Video Source (Google Drive vs Direct File Upload vs URL)
+  const [videoSourceType, setVideoSourceType] = useState<"gdrive" | "upload" | "url">("gdrive");
+  const [gDriveInput, setGDriveInput] = useState("");
+  const [parsedGDriveId, setParsedGDriveId] = useState("");
+  const [googleDriveFolderUrl, setGoogleDriveFolderUrl] = useState("");
+  const [folderModalOpen, setFolderModalOpen] = useState(false);
+  const [newFolderInput, setNewFolderInput] = useState("");
+
   const [videoUrl, setVideoUrl] = useState("");
   const [storageKey, setStorageKey] = useState("");
   const [fileSizeStr, setFileSizeStr] = useState("");
@@ -150,6 +172,8 @@ export default function RecordedClassesPage() {
         page: number;
         totalPages: number;
         activeCourses: SelectOption[];
+        instituteEmail?: string;
+        userEmail?: string;
       }>(`/api/recorded-classes?${params.toString()}`);
 
       if (res.ok && res.data?.success) {
@@ -157,6 +181,8 @@ export default function RecordedClassesPage() {
         setActiveCourses(res.data.activeCourses || []);
         setTotalCount(res.data.total || 0);
         setTotalPages(res.data.totalPages || 1);
+        if (res.data.instituteEmail) setInstituteEmail(res.data.instituteEmail);
+        if (res.data.userEmail) setUserEmail(res.data.userEmail);
         if (res.data.activeCourses && res.data.activeCourses.length > 0 && !formCourseId) {
           setFormCourseId(res.data.activeCourses[0].id);
         }
@@ -174,6 +200,46 @@ export default function RecordedClassesPage() {
   useEffect(() => {
     fetchClasses();
   }, [fetchClasses]);
+
+  // Load saved Google Drive Folder on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("institute_gdrive_folder");
+      if (saved) {
+        setGoogleDriveFolderUrl(saved);
+        setNewFolderInput(saved);
+      }
+    }
+  }, []);
+
+  const handleSaveGDriveFolder = () => {
+    const trimmed = newFolderInput.trim();
+    setGoogleDriveFolderUrl(trimmed);
+    if (typeof window !== "undefined") {
+      if (trimmed) {
+        localStorage.setItem("institute_gdrive_folder", trimmed);
+      } else {
+        localStorage.removeItem("institute_gdrive_folder");
+      }
+    }
+    setFolderModalOpen(false);
+  };
+
+  const handleGDriveInputChange = (val: string) => {
+    setGDriveInput(val);
+    const fileId = extractGoogleDriveFileId(val);
+    if (fileId) {
+      setParsedGDriveId(fileId);
+      setVideoUrl(`https://drive.google.com/file/d/${fileId}/preview`);
+      setStorageKey("");
+      setFileSizeStr("");
+    } else {
+      setParsedGDriveId("");
+      if (val.startsWith("http")) {
+        setVideoUrl(val);
+      }
+    }
+  };
 
   // Handle direct file upload with live XMLHttpRequest progress
   const uploadVideoFile = async (file: File) => {
@@ -299,7 +365,9 @@ export default function RecordedClassesPage() {
     setFormDescription("");
     setFormPublishStatus("Published");
     setFormDuration("45 mins");
-    setVideoSourceType("upload");
+    setVideoSourceType("gdrive");
+    setGDriveInput("");
+    setParsedGDriveId("");
     setVideoUrl("");
     setStorageKey("");
     setFileSizeStr("");
@@ -330,7 +398,22 @@ export default function RecordedClassesPage() {
     setVideoUrl(item.video_url);
     setStorageKey(item.storage_key || "");
     setFileSizeStr(item.file_size || "");
-    setVideoSourceType("url");
+
+    const gId = extractGoogleDriveFileId(item.video_url);
+    if (gId) {
+      setVideoSourceType("gdrive");
+      setGDriveInput(item.video_url);
+      setParsedGDriveId(gId);
+    } else if (item.storage_key) {
+      setVideoSourceType("upload");
+      setGDriveInput("");
+      setParsedGDriveId("");
+    } else {
+      setVideoSourceType("url");
+      setGDriveInput("");
+      setParsedGDriveId("");
+    }
+
     setThumbnailUrl(item.thumbnail_url || "");
     setSelectedFile(null);
     setUploadStatus("idle");
@@ -353,7 +436,21 @@ export default function RecordedClassesPage() {
       return;
     }
 
-    if (!videoUrl) {
+    let finalVideoUrl = videoUrl.trim();
+    if (videoSourceType === "gdrive") {
+      const gId = extractGoogleDriveFileId(gDriveInput) || parsedGDriveId;
+      if (gId) {
+        finalVideoUrl = `https://drive.google.com/file/d/${gId}/preview`;
+      } else if (gDriveInput.trim()) {
+        finalVideoUrl = gDriveInput.trim();
+      }
+    }
+
+    if (!finalVideoUrl) {
+      if (videoSourceType === "gdrive") {
+        setFormError("Please paste a valid Google Drive video link or File ID.");
+        return;
+      }
       if (videoSourceType === "upload" && uploadStatus === "uploading") {
         setFormError("Please wait for the video upload to complete.");
         return;
@@ -372,7 +469,7 @@ export default function RecordedClassesPage() {
         teacher_name: formTeacher.trim() || null,
         class_date: formDate ? new Date(formDate).toISOString() : null,
         description: formDescription.trim() || null,
-        video_url: videoUrl.trim(),
+        video_url: finalVideoUrl,
         storage_key: storageKey || null,
         thumbnail_url: thumbnailUrl || null,
         duration: formDuration || null,
@@ -478,14 +575,45 @@ export default function RecordedClassesPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={openCreateModal}
-          disabled={activeCourses.length === 0}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-md shadow-brand-500/20 transition-all cursor-pointer self-start sm:self-auto disabled:opacity-50"
-        >
-          <Plus className="w-4 h-4" /> Upload Recorded Class
-        </button>
+        <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+          {/* Quick Google Drive Action */}
+          <a
+            href={googleDriveFolderUrl || "https://drive.google.com/drive/u/0/my-drive"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs sm:text-sm shadow-xs transition-all cursor-pointer"
+            title={`Open Google Drive for ${instituteEmail || userEmail || "Institute"}`}
+          >
+            <svg className="w-4 h-4 shrink-0" viewBox="0 0 87.3 78" fill="none">
+              <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+              <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>
+              <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 10.15z" fill="#ea4335"/>
+              <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+              <path d="m59.8 53h27.5c0-1.55-.4-3.1-1.2-4.5l-13.75-23.8c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8z" fill="#2684fc"/>
+              <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25l16.15 28h27.5c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+            </svg>
+            <span className="hidden sm:inline">Google Drive</span>
+            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+          </a>
+
+          <button
+            type="button"
+            onClick={() => setFolderModalOpen(true)}
+            className="p-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 transition-all cursor-pointer"
+            title="Configure Institute Google Drive Folder Link"
+          >
+            <Folder className="w-4 h-4" />
+          </button>
+
+          <button
+            type="button"
+            onClick={openCreateModal}
+            disabled={activeCourses.length === 0}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-md shadow-brand-500/20 transition-all cursor-pointer disabled:opacity-50"
+          >
+            <Plus className="w-4 h-4" /> Upload Recorded Class
+          </button>
+        </div>
       </div>
 
       {/* Overview Stat Cards */}
@@ -987,6 +1115,25 @@ export default function RecordedClassesPage() {
               <div className="flex items-center bg-slate-200/80 p-0.5 rounded-lg text-xs">
                 <button
                   type="button"
+                  onClick={() => setVideoSourceType("gdrive")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-semibold transition-all cursor-pointer ${
+                    videoSourceType === "gdrive"
+                      ? "bg-white text-blue-700 shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 87.3 78" fill="none">
+                    <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                    <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>
+                    <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 10.15z" fill="#ea4335"/>
+                    <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                    <path d="m59.8 53h27.5c0-1.55-.4-3.1-1.2-4.5l-13.75-23.8c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8z" fill="#2684fc"/>
+                    <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25l16.15 28h27.5c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                  </svg>
+                  <span>Google Drive</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => setVideoSourceType("upload")}
                   className={`px-3 py-1 rounded-md font-semibold transition-all cursor-pointer ${
                     videoSourceType === "upload"
@@ -1010,7 +1157,114 @@ export default function RecordedClassesPage() {
               </div>
             </div>
 
-            {videoSourceType === "upload" ? (
+            {videoSourceType === "gdrive" ? (
+              <div className="space-y-3">
+                {/* Institute Account Link Banner */}
+                <div className="p-3.5 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-white border border-blue-200 shadow-2xs flex items-center justify-center shrink-0">
+                      <svg className="w-4 h-4" viewBox="0 0 87.3 78" fill="none">
+                        <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                        <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>
+                        <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 10.15z" fill="#ea4335"/>
+                        <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                        <path d="m59.8 53h27.5c0-1.55-.4-3.1-1.2-4.5l-13.75-23.8c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8z" fill="#2684fc"/>
+                        <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25l16.15 28h27.5c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-blue-900 block">
+                        Institute Storage Account
+                      </span>
+                      <span className="text-xs font-semibold text-blue-700">
+                        {instituteEmail || userEmail || "Logged-in Institute Email"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={googleDriveFolderUrl || "https://drive.google.com/drive/u/0/my-drive"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors shrink-0"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      Open Google Drive
+                    </a>
+                  </div>
+                </div>
+
+                {/* Google Drive Link Input */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Google Drive Video Link or File ID <span className="text-red-500">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setFolderModalOpen(true)}
+                      className="text-[11px] text-blue-600 hover:underline font-medium inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <Folder className="w-3 h-3" />
+                      {googleDriveFolderUrl ? "Change Folder Link" : "Set Default Folder"}
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={gDriveInput}
+                      onChange={(e) => handleGDriveInputChange(e.target.value)}
+                      placeholder="Paste link: https://drive.google.com/file/d/1BxiMVs.../view?usp=sharing"
+                      className="w-full pl-3.5 pr-24 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono"
+                    />
+                    {parsedGDriveId && (
+                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> Valid ID
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Live Preview if Valid */}
+                {parsedGDriveId && (
+                  <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        Interactive Video Preview
+                      </span>
+                      <span className="text-[11px] font-mono text-slate-400 truncate max-w-[180px]">
+                        ID: {parsedGDriveId}
+                      </span>
+                    </div>
+                    <div className="relative aspect-video rounded-lg overflow-hidden bg-black border border-slate-800">
+                      <iframe
+                        src={`https://drive.google.com/file/d/${parsedGDriveId}/preview`}
+                        title="Google Drive Video Preview"
+                        allow="autoplay; fullscreen"
+                        className="w-full h-full border-0"
+                      />
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      💡 Tip: If you see &quot;Access Denied&quot; or &quot;Request Access&quot;, ensure your video&apos;s share setting in Google Drive is set to <strong>&quot;Anyone with the link can view&quot;</strong>.
+                    </p>
+                  </div>
+                )}
+
+                {/* Quick Step by Step Instructions */}
+                <div className="p-3 bg-slate-100/70 border border-slate-200/80 rounded-xl text-xs space-y-1.5">
+                  <span className="font-bold text-slate-800 block text-[11px] uppercase tracking-wider">
+                    How to get the link from your Institute Google Drive:
+                  </span>
+                  <ol className="list-decimal pl-4 space-y-1 text-[11px] text-slate-600">
+                    <li>Click <strong>Open Google Drive</strong> above to access your files.</li>
+                    <li>Upload your class video (supports gigabyte-size HD lectures with zero limits).</li>
+                    <li>Right-click video ➔ <strong>Share</strong> ➔ Set Access to <strong>&quot;Anyone with the link&quot;</strong> ➔ Click <strong>Copy link</strong>.</li>
+                    <li>Paste the copied link above. It will be verified instantly!</li>
+                  </ol>
+                </div>
+              </div>
+            ) : videoSourceType === "upload" ? (
               <div className="space-y-3">
                 {/* Upload Drag & Drop Area */}
                 <div className="border-2 border-dashed border-slate-300 hover:border-brand-500 rounded-xl p-6 text-center transition-colors bg-white">
@@ -1081,22 +1335,41 @@ export default function RecordedClassesPage() {
                 )}
 
                 {uploadStatus === "error" && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between text-xs text-red-800">
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-                      <div>
-                        <span className="font-bold">Upload failed</span>
-                        <p className="text-[11px] text-red-600">{uploadError}</p>
+                  <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                        <div>
+                          <span className="font-bold">Upload failed</span>
+                          <p className="text-[11px] text-red-600">{uploadError}</p>
+                        </div>
                       </div>
+                      {selectedFile && (
+                        <button
+                          type="button"
+                          onClick={() => uploadVideoFile(selectedFile)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600 text-white font-semibold text-xs hover:bg-red-700 cursor-pointer"
+                        >
+                          <RotateCcw className="w-3 h-3" /> Retry
+                        </button>
+                      )}
                     </div>
-                    {selectedFile && (
-                      <button
-                        type="button"
-                        onClick={() => uploadVideoFile(selectedFile)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600 text-white font-semibold text-xs hover:bg-red-700"
-                      >
-                        <RotateCcw className="w-3 h-3" /> Retry
-                      </button>
+                    {uploadError.includes("413") && (
+                      <div className="pt-2 border-t border-red-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <span className="text-[11px] text-red-700">
+                          Web servers reject large video files (HTTP 413). Use Google Drive storage for your institute!
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setVideoSourceType("gdrive");
+                            setUploadError("");
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shrink-0 cursor-pointer"
+                        >
+                          Switch to Google Drive
+                        </button>
+                      </div>
                     )}
                   </div>
                 )}
@@ -1234,6 +1507,62 @@ export default function RecordedClassesPage() {
           </p>
           <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs">
             This will remove this recorded class from the course. This action cannot be undone.
+          </div>
+        </div>
+      </Modal>
+
+      {/* Google Drive Folder Config Modal */}
+      <Modal
+        isOpen={folderModalOpen}
+        onClose={() => setFolderModalOpen(false)}
+        title="Configure Institute Google Drive Folder"
+        subtitle="Set the default Google Drive folder where your institute stores recorded lectures"
+        icon={<Folder className="w-5 h-5 text-blue-600" />}
+        maxWidth="md"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setFolderModalOpen(false)}
+              className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveGDriveFolder}
+              className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+            >
+              Save Folder Link
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Save a link to your institute&apos;s dedicated <strong>Google Drive Folder</strong> (e.g., &quot;Recorded Classes 2026&quot;). Clicking the &quot;Google Drive&quot; button will take teachers and staff straight into this folder.
+          </p>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+              Google Drive Folder Link
+            </label>
+            <input
+              type="url"
+              value={newFolderInput}
+              onChange={(e) => setNewFolderInput(e.target.value)}
+              placeholder="https://drive.google.com/drive/folders/1aBcDeFgHiJkLm..."
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+            />
+          </div>
+
+          <div className="p-3 bg-blue-50/60 border border-blue-100 rounded-xl text-[11px] text-blue-800 space-y-1">
+            <span className="font-bold block">How to find your folder link:</span>
+            <span>1. Open Google Drive in your browser with your institute account.</span>
+            <br />
+            <span>2. Open or create the folder you want to use for class recordings.</span>
+            <br />
+            <span>3. Copy the URL from the browser address bar and paste it here.</span>
           </div>
         </div>
       </Modal>
