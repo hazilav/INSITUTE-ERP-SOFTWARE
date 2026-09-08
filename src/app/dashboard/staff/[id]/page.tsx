@@ -58,6 +58,12 @@ export default async function StaffProfilePage({
           last_login: true,
         },
       },
+      assigned_course: {
+        select: { id: true, name: true, code: true },
+      },
+      assigned_batch: {
+        select: { id: true, name: true },
+      },
     },
   });
 
@@ -286,6 +292,18 @@ export default async function StaffProfilePage({
                 <div className="flex justify-between py-1.5 border-b border-slate-50">
                   <span className="text-xs text-slate-400 uppercase font-semibold">Designation</span>
                   <span className="font-bold text-slate-900">{staff.designation}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-slate-50">
+                  <span className="text-xs text-slate-400 uppercase font-semibold">Assigned Course</span>
+                  <span className="font-semibold text-slate-800">
+                    {(staff as any).assigned_course?.name || "No course assigned"}
+                  </span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-slate-50">
+                  <span className="text-xs text-slate-400 uppercase font-semibold">Assigned Batch</span>
+                  <span className="font-semibold text-slate-800">
+                    {(staff as any).assigned_batch?.name || "No batch assigned"}
+                  </span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-slate-50">
                   <span className="text-xs text-slate-400 uppercase font-semibold">System Role</span>

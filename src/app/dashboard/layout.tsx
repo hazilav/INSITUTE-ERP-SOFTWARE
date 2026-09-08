@@ -15,6 +15,10 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  if (authContext.user.role === "STUDENT") {
+    redirect("/student/dashboard");
+  }
+
   return (
     <DashboardShellClient
       user={authContext.user}

@@ -13,6 +13,11 @@ export default async function SettingsPage() {
     redirect("/student/dashboard");
   }
 
+  // Owner Portal Guard: Only OWNER and ADMIN can access institute settings
+  if (authContext.user.role !== "OWNER" && authContext.user.role !== "ADMIN") {
+    redirect("/dashboard");
+  }
+
   const [institute, users, permissions] = await Promise.all([
     db.institute.findUnique({
       where: { id: authContext.institute.id },

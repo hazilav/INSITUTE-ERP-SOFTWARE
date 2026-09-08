@@ -37,11 +37,26 @@ export async function POST(request: Request) {
     // 3. If not found, try finding Staff by Staff ID / Employee ID
     if (!user) {
       const staff = await db.staffProfile.findFirst({
-        where: { employee_id: email.trim() },
-        include: { user: { include: { institute: true } } },
+        where: {
+          OR: [
+            { employee_id: email.trim() },
+            { employee_id: email.trim().toUpperCase() },
+          ],
+        },
+        select: {
+          id: true,
+          status: true,
+          user: { include: { institute: true } },
+        },
       });
 
       if (staff && staff.user) {
+        if (staff.status === "Inactive" || staff.status === "Resigned") {
+          return NextResponse.json(
+            { error: "Staff account is inactive. Please contact your Institute Admin." },
+            { status: 403 }
+          );
+        }
         user = staff.user;
       }
     }
@@ -58,6 +73,20 @@ export async function POST(request: Request) {
         { error: "Account is inactive. Please contact your Institute Admin." },
         { status: 403 }
       );
+    }
+
+    // Guard: Inactive staff profile check for email-based login
+    if (user.role === "STAFF" || user.role === "MENTOR") {
+      const staffProfile = await db.staffProfile.findFirst({
+        where: { user_id: user.id },
+        select: { id: true, status: true },
+      });
+      if (staffProfile && (staffProfile.status === "Inactive" || staffProfile.status === "Resigned")) {
+        return NextResponse.json(
+          { error: "Staff account is inactive. Please contact your Institute Admin." },
+          { status: 403 }
+        );
+      }
     }
 
     const isMatch = await comparePassword(password, user.password_hash);

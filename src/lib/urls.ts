@@ -19,7 +19,7 @@ export function getStudentPortalUrl(customDomain?: string | null): string {
 
 export function getStaffPortalUrl(customDomain?: string | null): string {
   const base = getBaseUrl(customDomain);
-  return `${base}/login`;
+  return `${base}/staff/login`;
 }
 
 export async function sharePortalLink(

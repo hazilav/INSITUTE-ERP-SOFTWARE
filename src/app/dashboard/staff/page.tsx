@@ -473,7 +473,7 @@ export default function StaffPage() {
                     ? st.assigned_batch.name
                     : st.assigned_course?.name
                     ? st.assigned_course.name
-                    : "Not assigned";
+                    : "No course assigned";
 
                   return (
                     <tr key={st.id} className="hover:bg-slate-50/60 transition-colors">
